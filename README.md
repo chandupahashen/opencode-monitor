@@ -42,23 +42,6 @@ npm install
 npm run tauri dev
 ```
 
-### Production Build
-
-```bash
-# Full build (lint + typecheck + test + MSI)
-.\build.ps1 -Configuration release
-
-# Or step by step:
-npm run build
-cargo tauri build --bundles msi
-```
-
-### Publishing a Release
-
-```bash
-.\publish-github.ps1 -Version 0.2.0
-```
-
 ## Database
 
 OpenCode Monitor reads from the `opencode.db` SQLite database created by the OpenCode CLI. By default it looks in:
