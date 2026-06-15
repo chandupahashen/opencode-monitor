@@ -335,7 +335,7 @@ export function Sessions() {
                     {detail.project_id && (
                       <div className="border-t border-border pt-3">
                         <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Project</div>
-                        <div className="text-xs text-accent">{projectName(detail.project_id)}</div>
+                        <div className="text-xs text-accent">{projectName(detail.project_id, detail.directory)}</div>
                       </div>
                     )}
 

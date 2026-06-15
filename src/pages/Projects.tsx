@@ -3,7 +3,7 @@ import { FolderOpen, Folder } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { DateFilter } from "../components/DateFilter";
 import { SkeletonCard, Skeleton } from "../components/Skeleton";
-import { projectName, projectDir } from "../utils/project";
+import { projectDir } from "../utils/project";
 
 function formatTokens(n: number) {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
@@ -73,7 +73,7 @@ export function Projects() {
   }
 
   const chartData = projectStats.slice(0, 15).map((p) => ({
-    name: projectName(p.project_id),
+    name: p.project_name,
     tokens: p.total_tokens,
     cost: p.total_cost,
     sessions: p.session_count,
@@ -105,7 +105,7 @@ export function Projects() {
 
       <div className="grid gap-3">
         {projectStats.slice(0, 20).map((p, i) => {
-          const name = projectName(p.project_id);
+          const name = p.project_name;
           const dir = projectDir(p.project_id);
           const pct = Math.min(100, (p.total_tokens / maxTokens) * 100);
           return (

@@ -4,7 +4,6 @@ import {
   XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend,
 } from "recharts";
 import { decodeModel } from "../utils/model";
-import { projectName } from "../utils/project";
 import { DateFilter } from "../components/DateFilter";
 import { SkeletonCard, Skeleton } from "../components/Skeleton";
 
@@ -150,7 +149,7 @@ export function Analytics() {
               <div key={p.project_id} className="flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-surface-700/30 transition-colors">
                 <div className="flex items-center gap-2 min-w-0">
                   <span className="text-[11px] text-gray-600 w-4 text-right">{i + 1}</span>
-                  <span className="text-sm text-gray-300 truncate max-w-[160px]">{projectName(p.project_id)}</span>
+                  <span className="text-sm text-gray-300 truncate max-w-[160px]">{p.project_name}</span>
                 </div>
                 <div className="flex items-center gap-3 flex-shrink-0">
                   <span className="text-[11px] text-gray-500">{p.session_count} ses</span>

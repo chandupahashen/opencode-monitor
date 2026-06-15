@@ -338,11 +338,12 @@ pub fn get_project_stats(
     let date_filter = build_date_filter(date_from, date_to, &mut param_values);
 
     let sql = format!(
-        "SELECT project_id, COUNT(*), SUM(tokens_input + tokens_output), COALESCE(SUM(cost), 0.0)
-         FROM session
-         WHERE project_id IS NOT NULL{date_filter}
-         GROUP BY project_id
-         ORDER BY SUM(tokens_input + tokens_output) DESC",
+        "SELECT s.project_id, COUNT(*), SUM(s.tokens_input + s.tokens_output), COALESCE(SUM(s.cost), 0.0),
+                (SELECT s2.directory FROM session s2 WHERE s2.project_id = s.project_id AND s2.directory IS NOT NULL LIMIT 1) as sample_dir
+         FROM session s
+         WHERE s.project_id IS NOT NULL{date_filter}
+         GROUP BY s.project_id
+         ORDER BY SUM(s.tokens_input + s.tokens_output) DESC",
         date_filter = date_filter
     );
 
@@ -351,8 +352,11 @@ pub fn get_project_stats(
 
     let rows = stmt
         .query_map(params_ref.as_slice(), |row| {
+            let project_id: String = row.get(0)?;
+            let sample_dir: Option<String> = row.get(4)?;
             Ok(ProjectStat {
-                project_id: row.get(0)?,
+                project_name: extract_project_name(&project_id, sample_dir.as_deref()),
+                project_id,
                 session_count: row.get(1)?,
                 total_tokens: row.get(2)?,
                 total_cost: row.get(3)?,

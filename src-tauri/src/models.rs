@@ -86,9 +86,32 @@ pub struct ModelStat {
 #[derive(Debug, Serialize)]
 pub struct ProjectStat {
     pub project_id: String,
+    pub project_name: String,
     pub session_count: i64,
     pub total_tokens: i64,
     pub total_cost: f64,
+}
+
+pub(crate) fn extract_project_name(id: &str, dir: Option<&str>) -> String {
+    let normalized = id.replace('\\', "/");
+    let parts: Vec<&str> = normalized.split('/').filter(|s| !s.is_empty()).collect();
+    if parts.len() > 1 {
+        return parts[parts.len() - 1].to_string();
+    }
+    if let Some(d) = dir {
+        let dn = d.replace('\\', "/");
+        let dp: Vec<&str> = dn.split('/').filter(|s| !s.is_empty()).collect();
+        if let Some(last) = dp.last() {
+            if !last.is_empty() {
+                return last.to_string();
+            }
+        }
+    }
+    let trimmed = id.trim();
+    if trimmed.len() <= 16 {
+        return trimmed.to_string();
+    }
+    format!("{}…", &trimmed[..12])
 }
 
 #[derive(Debug, Serialize)]
