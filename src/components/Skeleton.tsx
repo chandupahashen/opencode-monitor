@@ -59,7 +59,7 @@ export function AppLoader() {
             <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
           </svg>
         </div>
-        <span className="text-sm font-semibold text-gray-300">openCode Monitor</span>
+        <span className="text-sm font-semibold text-gray-300">OpenCode Monitor</span>
       </div>
       <div className="app-loader" />
       <p className="mt-4 text-xs text-gray-600">Loading data...</p>

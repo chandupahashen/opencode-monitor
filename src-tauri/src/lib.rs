@@ -27,7 +27,7 @@ pub fn run() {
         .with_ansi(false)
         .init();
 
-    tracing::info!("Starting openCode Monitor");
+    tracing::info!("Starting OpenCode Monitor");
 
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())

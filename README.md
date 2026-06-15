@@ -1,4 +1,4 @@
-# openCode Monitor
+# OpenCode Monitor
 
 A desktop dashboard for monitoring and analyzing your [opencode](https://opencode.ai) AI assistant usage. Built with Tauri v2, React, Rust, and SQLite.
 
@@ -61,7 +61,7 @@ cargo tauri build --bundles msi
 
 ## Database
 
-openCode Monitor reads from the `opencode.db` SQLite database created by the openCode CLI. By default it looks in:
+OpenCode Monitor reads from the `opencode.db` SQLite database created by the OpenCode CLI. By default it looks in:
 
 - **Windows:** `%APPDATA%/opencode/opencode.db`
 - **Linux/macOS:** `~/.local/share/opencode/opencode.db`

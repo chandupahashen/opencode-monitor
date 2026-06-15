@@ -1,6 +1,6 @@
 {
   "identifier": "default",
-  "description": "Default capabilities for openCode Monitor",
+  "description": "Default capabilities for OpenCode Monitor",
   "windows": ["main"],
   "permissions": [
     "core:default",

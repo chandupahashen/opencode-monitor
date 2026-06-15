@@ -1,6 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/nicedoc/open-code/refs/heads/main/schemas/json/tauri-conf.schema.json",
-  "productName": "openCode Monitor",
+  "productName": "OpenCode Monitor",
   "version": "0.1.0",
   "identifier": "com.opencode.monitor",
   "build": {
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "openCode Monitor",
+        "title": "OpenCode Monitor",
         "width": 1200,
         "height": 800,
         "minWidth": 900,
@@ -40,7 +40,7 @@
         "language": "en-US"
       }
     },
-    "copyright": "Copyright (c) 2025 openCode",
-    "publisher": "openCode"
+    "copyright": "Copyright (c) 2025 OpenCode",
+    "publisher": "OpenCode"
   }
 }

@@ -94,7 +94,7 @@ export function Settings() {
         </select>
       </Section>
 
-      <Section icon={Info} title="About openCode Monitor">
+      <Section icon={Info} title="About OpenCode Monitor">
         <div className="space-y-1 text-sm text-gray-400">
           <p>Version 0.1.0</p>
           <p className="text-xs text-gray-500">
