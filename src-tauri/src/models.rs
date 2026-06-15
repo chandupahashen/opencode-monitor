@@ -110,3 +110,11 @@ pub struct AppSettings {
     pub refresh_interval: u64,
     pub theme: String,
 }
+
+#[derive(Debug, Serialize)]
+pub struct HealthStatus {
+    pub version: String,
+    pub uptime: String,
+    pub db_connected: bool,
+    pub db_path: Option<String>,
+}

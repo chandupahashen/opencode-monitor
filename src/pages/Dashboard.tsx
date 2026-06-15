@@ -1,8 +1,10 @@
 import { useStore } from "../store/useStore";
 import { Activity, Cpu, DollarSign, Zap, BookOpen, Briefcase } from "lucide-react";
-import { AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { useMemo } from "react";
 import { decodeModel } from "../utils/model";
+import { DateFilter } from "../components/DateFilter";
+import { SkeletonCard, SkeletonKPI, Skeleton } from "../components/Skeleton";
 
 function formatCost(c: number) {
   if (c < 0.01) return `$${c.toFixed(4)}`;
@@ -44,10 +46,14 @@ export function Dashboard() {
 
   if (!overview) {
     return (
-      <div className="flex items-center justify-center h-64 text-gray-500">
-        <div className="text-center space-y-2">
-          <Activity className="w-8 h-8 mx-auto text-gray-600" />
-          <p>No data loaded. Click Refresh or check Settings.</p>
+      <div className="space-y-6 animate-skeleton">
+        <Skeleton className="h-5 w-32" />
+        <div className="grid grid-cols-6 gap-3">
+          {Array.from({ length: 6 }).map((_, i) => <SkeletonKPI key={i} />)}
+        </div>
+        <div className="grid grid-cols-2 gap-5">
+          <SkeletonCard />
+          <SkeletonCard />
         </div>
       </div>
     );
@@ -71,6 +77,10 @@ export function Dashboard() {
 
   return (
     <div className="space-y-6 animate-slide-in">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-bold">Dashboard</h2>
+        <DateFilter />
+      </div>
       <div className="grid grid-cols-6 gap-3">
         {kpiConfig.map((kpi) => {
           const Icon = kpi.icon;
@@ -118,23 +128,31 @@ export function Dashboard() {
             Model Distribution
           </h3>
           {modelUsage.length > 0 ? (
-            <ResponsiveContainer width="100%" height={220}>
-              <PieChart>
-                <Pie
-                  data={modelUsage.slice(0, 8)}
-                  dataKey="total_tokens"
-                  nameKey="model"
-                  cx="50%" cy="50%" outerRadius={80} innerRadius={40}
-                  label={({ name, percent }) => `${decodeModel(name as string).short} ${((percent ?? 0) * 100).toFixed(0)}%`}
-                  labelLine={{ stroke: "#2a2a3e", strokeWidth: 1 }}
-                >
-                  {modelUsage.slice(0, 8).map((_, i) => (
-                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip contentStyle={tooltipStyle} />
-              </PieChart>
-            </ResponsiveContainer>
+            <div className="space-y-2">
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={modelUsage.slice(0, 10)} layout="vertical" margin={{ left: 0, right: 20, top: 0, bottom: 0 }}>
+                  <XAxis type="number" tick={{ fontSize: 10, fill: "#6b7280" }} tickFormatter={formatTokens} axisLine={false} tickLine={false} />
+                  <YAxis type="category" dataKey="model" tick={{ fontSize: 10, fill: "#6b7280" }} tickFormatter={(v: string) => decodeModel(v).short} axisLine={false} tickLine={false} width={80} />
+                  <Tooltip contentStyle={tooltipStyle} formatter={(value) => formatTokens(Number(value))} />
+                  <Bar dataKey="total_tokens" radius={[0, 4, 4, 0]} maxBarSize={16}>
+                    {modelUsage.slice(0, 10).map((entry, i) => (
+                      <Cell key={entry.model} fill={COLORS[i % COLORS.length]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+              <div className="flex flex-wrap gap-x-4 gap-y-1 pt-1">
+                {modelUsage.slice(0, 10).map((m, i) => {
+                  const dm = decodeModel(m.model);
+                  return (
+                    <span key={m.model} className="flex items-center gap-1.5 text-[10px] text-gray-400">
+                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
+                      <span className={dm.color}>{dm.short}</span>
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
           ) : (
             <div className="flex items-center justify-center h-[220px] text-gray-600 text-sm">No model data</div>
           )}

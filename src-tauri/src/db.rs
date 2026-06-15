@@ -33,17 +33,70 @@ fn dirs_next() -> Option<PathBuf> {
     None
 }
 
+const SCHEMA_VERSION: i64 = 1;
+
 fn open_db(custom_path: Option<&str>) -> Result<Connection, String> {
     let path = match custom_path {
         Some(p) => PathBuf::from(p),
         None => dirs_next().ok_or_else(|| "opencode.db not found. Please set the path manually in Settings.".to_string())?,
     };
-    Connection::open(&path).map_err(|e| format!("Failed to open database: {e}"))
+    let conn = Connection::open(&path).map_err(|e| format!("Failed to open database: {e}"))?;
+    run_migrations(&conn)?;
+    Ok(conn)
 }
 
-pub fn get_overview(custom_path: Option<&str>) -> Result<Overview, String> {
+fn run_migrations(conn: &Connection) -> Result<(), String> {
+    let current: i64 = conn
+        .pragma_query_value(None, "user_version", |row| row.get(0))
+        .map_err(|e| e.to_string())?;
+
+    if current >= SCHEMA_VERSION {
+        return Ok(());
+    }
+
+    tracing::info!("Running DB migration: {} -> {}", current, SCHEMA_VERSION);
+
+    // Migration 1: initial schema (no changes needed, already using existing DB)
+    if current < 1 {
+        // Ensure indexes exist for common queries
+        conn.execute_batch(
+            "CREATE INDEX IF NOT EXISTS idx_session_time_created ON session(time_created);
+             CREATE INDEX IF NOT EXISTS idx_session_model ON session(model);
+             CREATE INDEX IF NOT EXISTS idx_session_project_id ON session(project_id);",
+        )
+        .map_err(|e| format!("Migration 1 failed: {e}"))?;
+    }
+
+    conn.pragma_update(None, "user_version", SCHEMA_VERSION)
+        .map_err(|e| e.to_string())?;
+
+    tracing::info!("DB migration to v{SCHEMA_VERSION} complete");
+    Ok(())
+}
+
+fn build_date_filter(date_from: Option<i64>, date_to: Option<i64>, param_values: &mut Vec<Box<dyn rusqlite::types::ToSql>>) -> String {
+    let mut sql = String::new();
+    if let Some(f) = date_from {
+        sql.push_str(&format!(" AND time_created >= ?{}", param_values.len() + 1));
+        param_values.push(Box::new(f));
+    }
+    if let Some(t) = date_to {
+        sql.push_str(&format!(" AND time_created <= ?{}", param_values.len() + 1));
+        param_values.push(Box::new(t));
+    }
+    sql
+}
+
+pub fn get_overview(
+    custom_path: Option<&str>,
+    date_from: Option<i64>,
+    date_to: Option<i64>,
+) -> Result<Overview, String> {
     let conn = open_db(custom_path)?;
-    conn.query_row(
+    let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
+    let date_filter = build_date_filter(date_from, date_to, &mut param_values);
+
+    let sql = format!(
         "SELECT
             COUNT(*) as total_sessions,
             COALESCE(SUM(tokens_input), 0) as total_tokens_input,
@@ -54,22 +107,24 @@ pub fn get_overview(custom_path: Option<&str>) -> Result<Overview, String> {
             COALESCE(SUM(cost), 0.0) as total_cost,
             COUNT(DISTINCT project_id) as total_projects,
             COUNT(CASE WHEN time_archived IS NULL THEN 1 END) as active_sessions
-         FROM session",
-        [],
-        |row| {
-            Ok(Overview {
-                total_sessions: row.get(0)?,
-                total_tokens_input: row.get(1)?,
-                total_tokens_output: row.get(2)?,
-                total_tokens_reasoning: row.get(3)?,
-                total_tokens_cache_read: row.get(4)?,
-                total_tokens_cache_write: row.get(5)?,
-                total_cost: row.get(6)?,
-                total_projects: row.get(7)?,
-                active_sessions: row.get(8)?,
-            })
-        },
-    )
+         FROM session WHERE 1=1{date_filter}",
+        date_filter = date_filter
+    );
+
+    let params_ref: Vec<&dyn rusqlite::types::ToSql> = param_values.iter().map(|p| p.as_ref()).collect();
+    conn.query_row(&sql, params_ref.as_slice(), |row| {
+        Ok(Overview {
+            total_sessions: row.get(0)?,
+            total_tokens_input: row.get(1)?,
+            total_tokens_output: row.get(2)?,
+            total_tokens_reasoning: row.get(3)?,
+            total_tokens_cache_read: row.get(4)?,
+            total_tokens_cache_write: row.get(5)?,
+            total_cost: row.get(6)?,
+            total_projects: row.get(7)?,
+            active_sessions: row.get(8)?,
+        })
+    })
     .map_err(|e| e.to_string())
 }
 
@@ -235,19 +290,28 @@ pub fn get_token_trends(
     Ok(result)
 }
 
-pub fn get_model_usage(custom_path: Option<&str>) -> Result<Vec<ModelStat>, String> {
+pub fn get_model_usage(
+    custom_path: Option<&str>,
+    date_from: Option<i64>,
+    date_to: Option<i64>,
+) -> Result<Vec<ModelStat>, String> {
     let conn = open_db(custom_path)?;
-    let mut stmt = conn
-        .prepare(
-            "SELECT model, COUNT(*), SUM(tokens_input + tokens_output), COALESCE(SUM(cost), 0.0)
-             FROM session
-             GROUP BY model
-             ORDER BY SUM(tokens_input + tokens_output) DESC",
-        )
-        .map_err(|e| e.to_string())?;
+    let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
+    let date_filter = build_date_filter(date_from, date_to, &mut param_values);
+
+    let sql = format!(
+        "SELECT model, COUNT(*), SUM(tokens_input + tokens_output), COALESCE(SUM(cost), 0.0)
+         FROM session WHERE 1=1{date_filter}
+         GROUP BY model
+         ORDER BY SUM(tokens_input + tokens_output) DESC",
+        date_filter = date_filter
+    );
+
+    let params_ref: Vec<&dyn rusqlite::types::ToSql> = param_values.iter().map(|p| p.as_ref()).collect();
+    let mut stmt = conn.prepare(&sql).map_err(|e| e.to_string())?;
 
     let rows = stmt
-        .query_map([], |row| {
+        .query_map(params_ref.as_slice(), |row| {
             Ok(ModelStat {
                 model: row.get(0)?,
                 session_count: row.get(1)?,
@@ -264,20 +328,29 @@ pub fn get_model_usage(custom_path: Option<&str>) -> Result<Vec<ModelStat>, Stri
     Ok(result)
 }
 
-pub fn get_project_stats(custom_path: Option<&str>) -> Result<Vec<ProjectStat>, String> {
+pub fn get_project_stats(
+    custom_path: Option<&str>,
+    date_from: Option<i64>,
+    date_to: Option<i64>,
+) -> Result<Vec<ProjectStat>, String> {
     let conn = open_db(custom_path)?;
-    let mut stmt = conn
-        .prepare(
-            "SELECT project_id, COUNT(*), SUM(tokens_input + tokens_output), COALESCE(SUM(cost), 0.0)
-             FROM session
-             WHERE project_id IS NOT NULL
-             GROUP BY project_id
-             ORDER BY SUM(tokens_input + tokens_output) DESC",
-        )
-        .map_err(|e| e.to_string())?;
+    let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
+    let date_filter = build_date_filter(date_from, date_to, &mut param_values);
+
+    let sql = format!(
+        "SELECT project_id, COUNT(*), SUM(tokens_input + tokens_output), COALESCE(SUM(cost), 0.0)
+         FROM session
+         WHERE project_id IS NOT NULL{date_filter}
+         GROUP BY project_id
+         ORDER BY SUM(tokens_input + tokens_output) DESC",
+        date_filter = date_filter
+    );
+
+    let params_ref: Vec<&dyn rusqlite::types::ToSql> = param_values.iter().map(|p| p.as_ref()).collect();
+    let mut stmt = conn.prepare(&sql).map_err(|e| e.to_string())?;
 
     let rows = stmt
-        .query_map([], |row| {
+        .query_map(params_ref.as_slice(), |row| {
             Ok(ProjectStat {
                 project_id: row.get(0)?,
                 session_count: row.get(1)?,
@@ -329,9 +402,13 @@ pub fn get_daily_activity(
     Ok(result)
 }
 
-pub fn get_cost_breakdown(custom_path: Option<&str>) -> Result<CostBreakdown, String> {
-    let by_model = get_model_usage(custom_path)?;
-    let by_project = get_project_stats(custom_path)?;
+pub fn get_cost_breakdown(
+    custom_path: Option<&str>,
+    date_from: Option<i64>,
+    date_to: Option<i64>,
+) -> Result<CostBreakdown, String> {
+    let by_model = get_model_usage(custom_path, date_from, date_to)?;
+    let by_project = get_project_stats(custom_path, date_from, date_to)?;
     Ok(CostBreakdown { by_model, by_project })
 }
 

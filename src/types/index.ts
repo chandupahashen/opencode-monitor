@@ -98,3 +98,10 @@ export interface AppSettings {
   refresh_interval: number;
   theme: string;
 }
+
+export interface HealthStatus {
+  version: string;
+  uptime: string;
+  db_connected: boolean;
+  db_path: string | null;
+}

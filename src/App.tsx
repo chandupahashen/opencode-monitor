@@ -1,6 +1,7 @@
 import { useStore } from "./store/useStore";
 import { useDb } from "./hooks/useDb";
 import { useEffect } from "react";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import { Layout } from "./components/Layout";
 import { Dashboard } from "./pages/Dashboard";
 import { Sessions } from "./pages/Sessions";
@@ -14,7 +15,7 @@ function App() {
 
   useEffect(() => {
     refreshAll();
-  }, []);
+  }, [refreshAll]);
 
   const pages: Record<string, React.ReactNode> = {
     dashboard: <Dashboard />,
@@ -24,7 +25,11 @@ function App() {
     settings: <Settings />,
   };
 
-  return <Layout>{pages[currentTab] ?? <Dashboard />}</Layout>;
+  return (
+    <ErrorBoundary>
+      <Layout>{pages[currentTab] ?? <Dashboard />}</Layout>
+    </ErrorBoundary>
+  );
 }
 
 export default App;

@@ -1,5 +1,8 @@
+use once_cell::sync::Lazy;
 use std::sync::Mutex;
+use std::time::Instant;
 use tauri::State;
+use tracing::instrument;
 
 use crate::db;
 use crate::models::*;
@@ -9,13 +12,21 @@ pub struct AppState {
     pub refresh_interval: Mutex<u64>,
 }
 
+static START_TIME: Lazy<Instant> = Lazy::new(Instant::now);
+
 #[tauri::command]
-pub fn get_overview(state: State<AppState>) -> Result<Overview, String> {
+#[instrument(skip(state))]
+pub fn get_overview(
+    state: State<AppState>,
+    date_from: Option<i64>,
+    date_to: Option<i64>,
+) -> Result<Overview, String> {
     let path = state.db_path.lock().unwrap().clone();
-    db::get_overview(path.as_deref())
+    db::get_overview(path.as_deref(), date_from, date_to)
 }
 
 #[tauri::command]
+#[instrument(skip(state))]
 pub fn get_sessions(
     state: State<AppState>,
     limit: Option<i64>,
@@ -38,6 +49,7 @@ pub fn get_sessions(
 }
 
 #[tauri::command]
+#[instrument(skip(state))]
 pub fn get_session_detail(
     state: State<AppState>,
     session_id: String,
@@ -47,6 +59,7 @@ pub fn get_session_detail(
 }
 
 #[tauri::command]
+#[instrument(skip(state))]
 pub fn get_token_trends(
     state: State<AppState>,
     days: Option<i64>,
@@ -56,18 +69,29 @@ pub fn get_token_trends(
 }
 
 #[tauri::command]
-pub fn get_model_usage(state: State<AppState>) -> Result<Vec<ModelStat>, String> {
+#[instrument(skip(state))]
+pub fn get_model_usage(
+    state: State<AppState>,
+    date_from: Option<i64>,
+    date_to: Option<i64>,
+) -> Result<Vec<ModelStat>, String> {
     let path = state.db_path.lock().unwrap().clone();
-    db::get_model_usage(path.as_deref())
+    db::get_model_usage(path.as_deref(), date_from, date_to)
 }
 
 #[tauri::command]
-pub fn get_project_stats(state: State<AppState>) -> Result<Vec<ProjectStat>, String> {
+#[instrument(skip(state))]
+pub fn get_project_stats(
+    state: State<AppState>,
+    date_from: Option<i64>,
+    date_to: Option<i64>,
+) -> Result<Vec<ProjectStat>, String> {
     let path = state.db_path.lock().unwrap().clone();
-    db::get_project_stats(path.as_deref())
+    db::get_project_stats(path.as_deref(), date_from, date_to)
 }
 
 #[tauri::command]
+#[instrument(skip(state))]
 pub fn get_daily_activity(
     state: State<AppState>,
     months: Option<i64>,
@@ -77,40 +101,70 @@ pub fn get_daily_activity(
 }
 
 #[tauri::command]
-pub fn get_cost_breakdown(state: State<AppState>) -> Result<CostBreakdown, String> {
+#[instrument(skip(state))]
+pub fn get_cost_breakdown(
+    state: State<AppState>,
+    date_from: Option<i64>,
+    date_to: Option<i64>,
+) -> Result<CostBreakdown, String> {
     let path = state.db_path.lock().unwrap().clone();
-    db::get_cost_breakdown(path.as_deref())
+    db::get_cost_breakdown(path.as_deref(), date_from, date_to)
 }
 
 #[tauri::command]
+#[instrument(skip(state))]
 pub fn get_models_list(state: State<AppState>) -> Result<Vec<String>, String> {
     let path = state.db_path.lock().unwrap().clone();
     db::get_models_list(path.as_deref())
 }
 
 #[tauri::command]
+#[instrument(skip(state))]
 pub fn get_projects_list(state: State<AppState>) -> Result<Vec<String>, String> {
     let path = state.db_path.lock().unwrap().clone();
     db::get_projects_list(path.as_deref())
 }
 
 #[tauri::command]
+#[instrument(skip(state))]
 pub fn set_db_path(state: State<AppState>, path: String) -> Result<(), String> {
+    tracing::info!("Setting DB path to: {path}");
     *state.db_path.lock().unwrap() = Some(path);
     Ok(())
 }
 
 #[tauri::command]
+#[instrument(skip(state))]
 pub fn set_refresh_interval(state: State<AppState>, interval: u64) -> Result<(), String> {
+    tracing::info!("Setting refresh interval to: {interval}s");
     *state.refresh_interval.lock().unwrap() = interval;
     Ok(())
 }
 
 #[tauri::command]
+#[instrument(skip(state))]
 pub fn get_settings(state: State<AppState>) -> Result<AppSettings, String> {
     Ok(AppSettings {
         db_path: state.db_path.lock().unwrap().clone(),
         refresh_interval: *state.refresh_interval.lock().unwrap(),
         theme: "system".to_string(),
+    })
+}
+
+#[tauri::command]
+#[instrument(skip(state))]
+pub fn health_check(state: State<AppState>) -> Result<HealthStatus, String> {
+    let path = state.db_path.lock().unwrap().clone();
+    let uptime = format!("{}s", START_TIME.elapsed().as_secs());
+    let db_ok = match path.as_deref() {
+        Some(p) => std::path::Path::new(p).exists(),
+        None => false,
+    };
+
+    Ok(HealthStatus {
+        version: env!("CARGO_PKG_VERSION").to_string(),
+        uptime,
+        db_connected: db_ok,
+        db_path: path,
     })
 }

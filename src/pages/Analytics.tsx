@@ -4,6 +4,9 @@ import {
   XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend,
 } from "recharts";
 import { decodeModel } from "../utils/model";
+import { projectName } from "../utils/project";
+import { DateFilter } from "../components/DateFilter";
+import { SkeletonCard, Skeleton } from "../components/Skeleton";
 
 function formatTokens(n: number) {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
@@ -21,6 +24,24 @@ export function Analytics() {
   const tokenTrends = useStore((s) => s.tokenTrends);
   const modelUsage = useStore((s) => s.modelUsage);
   const costBreakdown = useStore((s) => s.costBreakdown);
+  const isLoading = useStore((s) => s.isLoading);
+
+  if (isLoading && tokenTrends.length === 0) {
+    return (
+      <div className="space-y-5">
+        <Skeleton className="h-5 w-24" />
+        <SkeletonCard />
+        <div className="grid grid-cols-2 gap-5">
+          <SkeletonCard />
+          <SkeletonCard />
+        </div>
+        <div className="grid grid-cols-2 gap-5">
+          <SkeletonCard />
+          <SkeletonCard />
+        </div>
+      </div>
+    );
+  }
 
   const stackedTrend = tokenTrends.map((t) => ({
     date: t.date,
@@ -34,7 +55,10 @@ export function Analytics() {
 
   return (
     <div className="space-y-5 animate-slide-in">
-      <h2 className="text-lg font-bold">Analytics</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-bold">Analytics</h2>
+        <DateFilter />
+      </div>
 
       <div className="glass-card rounded-xl p-5">
         <h3 className="text-sm font-medium text-gray-300 mb-4 flex items-center gap-2">
@@ -126,7 +150,7 @@ export function Analytics() {
               <div key={p.project_id} className="flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-surface-700/30 transition-colors">
                 <div className="flex items-center gap-2 min-w-0">
                   <span className="text-[11px] text-gray-600 w-4 text-right">{i + 1}</span>
-                  <span className="text-sm text-gray-300 truncate max-w-[160px]">{p.project_id.split("/").pop() ?? p.project_id}</span>
+                  <span className="text-sm text-gray-300 truncate max-w-[160px]">{projectName(p.project_id)}</span>
                 </div>
                 <div className="flex items-center gap-3 flex-shrink-0">
                   <span className="text-[11px] text-gray-500">{p.session_count} ses</span>

@@ -2,7 +2,10 @@ import { useState } from "react";
 import { useStore } from "../store/useStore";
 import { useDb } from "../hooks/useDb";
 import { JsonPreview } from "../components/JsonPreview";
-import { Search, ChevronDown, ChevronUp, X, Code2, Layers } from "lucide-react";
+import { Search, ChevronDown, ChevronUp, X, Code2, Layers, Zap, Activity } from "lucide-react";
+import { DateFilter } from "../components/DateFilter";
+import { projectName } from "../utils/project";
+import { SkeletonTable, Skeleton } from "../components/Skeleton";
 import { decodeModel } from "../utils/model";
 import type { SessionRow, SessionDetail } from "../types";
 
@@ -33,8 +36,14 @@ function shortenId(id: string) {
   return id.length > 14 ? id.slice(0, 14) + "…" : id;
 }
 
+function SortIcon({ colKey, sortKey, sortAsc }: { colKey: keyof SessionRow; sortKey: keyof SessionRow; sortAsc: boolean }) {
+  if (sortKey !== colKey) return null;
+  return sortAsc ? <ChevronUp className="w-3 h-3 inline" /> : <ChevronDown className="w-3 h-3 inline" />;
+}
+
 export function Sessions() {
   const sessions = useStore((s) => s.sessions);
+  const isLoading = useStore((s) => s.isLoading);
   const { fetchSessionDetail } = useDb();
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -43,6 +52,15 @@ export function Sessions() {
   const [sortKey, setSortKey] = useState<keyof SessionRow>("time_created");
   const [sortAsc, setSortAsc] = useState(false);
   const [showJson, setShowJson] = useState(false);
+
+  if (isLoading && sessions.length === 0) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-5 w-24" />
+        <SkeletonTable rows={8} />
+      </div>
+    );
+  }
 
   const filtered = sessions
     .filter((s) => {
@@ -71,11 +89,6 @@ export function Sessions() {
       setSortKey(key);
       setSortAsc(false);
     }
-  }
-
-  function SortIcon({ colKey }: { colKey: keyof SessionRow }) {
-    if (sortKey !== colKey) return null;
-    return sortAsc ? <ChevronUp className="w-3 h-3 inline" /> : <ChevronDown className="w-3 h-3 inline" />;
   }
 
   async function handleSelect(id: string) {
@@ -128,20 +141,23 @@ export function Sessions() {
 
   return (
     <div className="space-y-4 animate-slide-in">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-3">
           <h2 className="text-lg font-bold">Sessions</h2>
           <span className="text-xs text-gray-500 bg-surface-700/50 px-2 py-0.5 rounded-full">{filtered.length} of {sessions.length}</span>
         </div>
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500" />
-          <input
-            type="text"
-            placeholder="Search sessions..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 pr-3 py-2 bg-surface-800 border border-border rounded-lg text-sm focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20 w-64 placeholder:text-gray-600"
-          />
+        <div className="flex items-center gap-3">
+          <DateFilter />
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500" />
+            <input
+              type="text"
+              placeholder="Search sessions..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9 pr-3 py-2 bg-surface-800 border border-border rounded-lg text-sm focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20 w-48 placeholder:text-gray-600"
+            />
+          </div>
         </div>
       </div>
 
@@ -151,11 +167,11 @@ export function Sessions() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-gray-500 text-[11px] uppercase tracking-wider">
-                  <th className="text-left p-3 cursor-pointer hover:text-gray-300 font-medium" onClick={() => handleSort("time_created")}>Date <SortIcon colKey="time_created" /></th>
-                  <th className="text-left p-3 cursor-pointer hover:text-gray-300 font-medium" onClick={() => handleSort("title")}>Title <SortIcon colKey="title" /></th>
-                  <th className="text-left p-3 cursor-pointer hover:text-gray-300 font-medium" onClick={() => handleSort("model")}>Model <SortIcon colKey="model" /></th>
-                  <th className="text-right p-3 cursor-pointer hover:text-gray-300 font-medium" onClick={() => handleSort("tokens_input")}>Tokens <SortIcon colKey="tokens_input" /></th>
-                  <th className="text-right p-3 cursor-pointer hover:text-gray-300 font-medium" onClick={() => handleSort("cost")}>Cost <SortIcon colKey="cost" /></th>
+                  <th className="text-left p-3 cursor-pointer hover:text-gray-300 font-medium" onClick={() => handleSort("time_created")}>Date <SortIcon colKey="time_created" sortKey={sortKey} sortAsc={sortAsc} /></th>
+                  <th className="text-left p-3 cursor-pointer hover:text-gray-300 font-medium" onClick={() => handleSort("title")}>Title <SortIcon colKey="title" sortKey={sortKey} sortAsc={sortAsc} /></th>
+                  <th className="text-left p-3 cursor-pointer hover:text-gray-300 font-medium" onClick={() => handleSort("model")}>Model <SortIcon colKey="model" sortKey={sortKey} sortAsc={sortAsc} /></th>
+                  <th className="text-right p-3 cursor-pointer hover:text-gray-300 font-medium" onClick={() => handleSort("tokens_input")}>Tokens <SortIcon colKey="tokens_input" sortKey={sortKey} sortAsc={sortAsc} /></th>
+                  <th className="text-right p-3 cursor-pointer hover:text-gray-300 font-medium" onClick={() => handleSort("cost")}>Cost <SortIcon colKey="cost" sortKey={sortKey} sortAsc={sortAsc} /></th>
                   <th className="text-right p-3 font-medium">Duration</th>
                 </tr>
               </thead>
@@ -177,6 +193,16 @@ export function Sessions() {
                     </td>
                     <td className="p-3">
                       <span className={`text-xs font-medium ${decodeModel(s.model).color}`}>{decodeModel(s.model).short}</span>
+                      {decodeModel(s.model).tier && (
+                        <span className={`ml-1.5 inline-flex items-center gap-0.5 px-1 py-0.5 rounded text-[9px] font-medium ${
+                          decodeModel(s.model).tier === "high"
+                            ? "bg-red-950/60 text-red-accent border border-red-900/50"
+                            : "bg-yellow-950/60 text-yellow-accent border border-yellow-900/50"
+                        }`}>
+                          {decodeModel(s.model).tier === "high" ? <Zap className="w-2.5 h-2.5" /> : <Activity className="w-2.5 h-2.5" />}
+                          {decodeModel(s.model).tier}
+                        </span>
+                      )}
                     </td>
                     <td className="p-3 text-right">
                       <span className="text-yellow-accent/90 font-medium text-xs">{formatTokens(s.tokens_input + s.tokens_output)}</span>
@@ -309,7 +335,7 @@ export function Sessions() {
                     {detail.project_id && (
                       <div className="border-t border-border pt-3">
                         <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Project</div>
-                        <div className="text-xs text-accent">{detail.project_id}</div>
+                        <div className="text-xs text-accent">{projectName(detail.project_id)}</div>
                       </div>
                     )}
 

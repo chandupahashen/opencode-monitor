@@ -1,10 +1,11 @@
+import { useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useStore } from "../store/useStore";
-import type { Overview, SessionRow, SessionDetail, TokenTrend, ModelStat, ProjectStat, DayActivity, CostBreakdown } from "../types";
+import type { Overview, SessionRow, SessionDetail, TokenTrend, ModelStat, ProjectStat, DayActivity, CostBreakdown, HealthStatus } from "../types";
 
 export function useDb() {
-  async function fetchOverview(): Promise<Overview> {
-    return invoke<Overview>("get_overview");
+  async function fetchOverview(opts?: { dateFrom?: number; dateTo?: number }): Promise<Overview> {
+    return invoke<Overview>("get_overview", { dateFrom: opts?.dateFrom ?? null, dateTo: opts?.dateTo ?? null });
   }
 
   async function fetchSessions(opts?: {
@@ -33,20 +34,20 @@ export function useDb() {
     return invoke<TokenTrend[]>("get_token_trends", { days: days ?? 30 });
   }
 
-  async function fetchModelUsage(): Promise<ModelStat[]> {
-    return invoke<ModelStat[]>("get_model_usage");
+  async function fetchModelUsage(opts?: { dateFrom?: number; dateTo?: number }): Promise<ModelStat[]> {
+    return invoke<ModelStat[]>("get_model_usage", { dateFrom: opts?.dateFrom ?? null, dateTo: opts?.dateTo ?? null });
   }
 
-  async function fetchProjectStats(): Promise<ProjectStat[]> {
-    return invoke<ProjectStat[]>("get_project_stats");
+  async function fetchProjectStats(opts?: { dateFrom?: number; dateTo?: number }): Promise<ProjectStat[]> {
+    return invoke<ProjectStat[]>("get_project_stats", { dateFrom: opts?.dateFrom ?? null, dateTo: opts?.dateTo ?? null });
   }
 
   async function fetchDailyActivity(months?: number): Promise<DayActivity[]> {
     return invoke<DayActivity[]>("get_daily_activity", { months: months ?? 12 });
   }
 
-  async function fetchCostBreakdown(): Promise<CostBreakdown> {
-    return invoke<CostBreakdown>("get_cost_breakdown");
+  async function fetchCostBreakdown(opts?: { dateFrom?: number; dateTo?: number }): Promise<CostBreakdown> {
+    return invoke<CostBreakdown>("get_cost_breakdown", { dateFrom: opts?.dateFrom ?? null, dateTo: opts?.dateTo ?? null });
   }
 
   async function fetchModelsList(): Promise<string[]> {
@@ -57,6 +58,10 @@ export function useDb() {
     return invoke<string[]>("get_projects_list");
   }
 
+  async function fetchHealthStatus(): Promise<HealthStatus> {
+    return invoke<HealthStatus>("health_check");
+  }
+
   async function setDbPath(path: string): Promise<void> {
     return invoke("set_db_path", { path });
   }
@@ -65,19 +70,30 @@ export function useDb() {
     return invoke("set_refresh_interval", { interval });
   }
 
-  async function refreshAll() {
-    useStore.getState().setLoading(true);
-    useStore.getState().setError(null);
+  function dateToMs(dateStr: string): number | undefined {
+    if (!dateStr) return undefined;
+    const d = new Date(dateStr + "T00:00:00");
+    return d.getTime();
+  }
+
+  const refreshAll = useCallback(async () => {
+    const store = useStore.getState();
+    store.setLoading(true);
+    store.setError(null);
     try {
+      const df = dateToMs(store.dateFrom);
+      const dt = dateToMs(store.dateTo);
+      const opts = df || dt ? { dateFrom: df, dateTo: dt ? dt + 86_400_000 : undefined } : undefined;
+
       const [overview, sessions, tokenTrends, modelUsage, projectStats, dailyActivity, costBreakdown] =
         await Promise.all([
-          fetchOverview(),
-          fetchSessions(),
+          fetchOverview(opts),
+          fetchSessions(opts),
           fetchTokenTrends(),
-          fetchModelUsage(),
-          fetchProjectStats(),
+          fetchModelUsage(opts),
+          fetchProjectStats(opts),
           fetchDailyActivity(),
-          fetchCostBreakdown(),
+          fetchCostBreakdown(opts),
         ]);
       useStore.getState().setOverview(overview);
       useStore.getState().setSessions(sessions);
@@ -91,7 +107,7 @@ export function useDb() {
     } finally {
       useStore.getState().setLoading(false);
     }
-  }
+  }, []);
 
   return {
     fetchOverview,
@@ -104,6 +120,7 @@ export function useDb() {
     fetchCostBreakdown,
     fetchModelsList,
     fetchProjectsList,
+    fetchHealthStatus,
     setDbPath,
     setRefreshInterval,
     refreshAll,

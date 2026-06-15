@@ -13,6 +13,8 @@ interface AppStore {
   error: string | null;
   refreshInterval: number;
   currentTab: string;
+  dateFrom: string;
+  dateTo: string;
 
   setOverview: (data: Overview) => void;
   setSessions: (data: SessionRow[]) => void;
@@ -25,6 +27,8 @@ interface AppStore {
   setError: (e: string | null) => void;
   setRefreshInterval: (v: number) => void;
   setCurrentTab: (t: string) => void;
+  setDateFrom: (d: string) => void;
+  setDateTo: (d: string) => void;
 }
 
 export const useStore = create<AppStore>((set) => ({
@@ -37,8 +41,10 @@ export const useStore = create<AppStore>((set) => ({
   costBreakdown: null,
   isLoading: false,
   error: null,
-  refreshInterval: 15,
+  refreshInterval: 5,
   currentTab: "dashboard",
+  dateFrom: "",
+  dateTo: "",
 
   setOverview: (data) => set({ overview: data }),
   setSessions: (data) => set({ sessions: data }),
@@ -51,4 +57,6 @@ export const useStore = create<AppStore>((set) => ({
   setError: (e) => set({ error: e }),
   setRefreshInterval: (v) => set({ refreshInterval: v }),
   setCurrentTab: (t) => set({ currentTab: t }),
+  setDateFrom: (d) => set({ dateFrom: d }),
+  setDateTo: (d) => set({ dateTo: d }),
 }));

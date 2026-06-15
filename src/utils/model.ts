@@ -6,11 +6,12 @@ export interface DecodedModel {
   display: string;
   short: string;
   color: string;
+  tier: "high" | "medium" | null;
 }
 
 export function decodeModel(raw: string | null): DecodedModel {
   if (!raw) {
-    return { id: "—", provider: "", variant: null, discount: null, display: "—", short: "—", color: "text-gray-500" };
+    return { id: "—", provider: "", variant: null, discount: null, display: "—", short: "—", color: "text-gray-500", tier: null };
   }
 
   let id = raw;
@@ -46,8 +47,20 @@ export function decodeModel(raw: string | null): DecodedModel {
   if (discount !== null) display += ` ${discount}%`;
 
   const color = getModelColor(id);
+  const tier = getModelTier(id);
 
-  return { id, provider, variant, discount, display, short, color };
+  return { id, provider, variant, discount, display, short, color, tier };
+}
+
+export function getModelTier(model: string): "high" | "medium" | null {
+  const m = model.toLowerCase();
+  if (m.includes("o1") || m.includes("o3") || m.includes("opus") || m.includes("gpt-4") && !m.includes("mini") && !m.includes("turbo") && !m.includes("4o")) {
+    return "high";
+  }
+  if (m.includes("sonnet") || m.includes("gpt-4o") || m.includes("gpt-4-turbo") || m.includes("gemini-1.5-pro") || m.includes("deepseek-v2") || m.includes("grok-2") || m.includes("llama-3.1-70b") || m.includes("llama-3.1-405b")) {
+    return "medium";
+  }
+  return null;
 }
 
 function getModelColor(model: string): string {

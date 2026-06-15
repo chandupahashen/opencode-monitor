@@ -3,30 +3,8 @@ import { useStore } from "../store/useStore";
 import { useDb } from "../hooks/useDb";
 import { Save, Database, RefreshCw, Palette, Info } from "lucide-react";
 
-export function Settings() {
-  const refreshInterval = useStore((s) => s.refreshInterval);
-  const setRefreshInterval = useStore((s) => s.setRefreshInterval);
-  const error = useStore((s) => s.error);
-  const { refreshAll } = useDb();
-  const [dbPath, setDbPath] = useState("");
-  const [saved, setSaved] = useState(false);
-
-  async function handleSaveDbPath() {
-    if (!dbPath.trim()) return;
-    const { setDbPath: setPath } = useDb();
-    await setPath(dbPath.trim());
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-    refreshAll();
-  }
-
-  async function handleRefreshChange(val: number) {
-    setRefreshInterval(val);
-    const { setRefreshInterval: setInterval } = useDb();
-    await setInterval(val);
-  }
-
-  const Section = ({ icon: Icon, title, desc, children }: { icon: React.ElementType; title: string; desc?: string; children: React.ReactNode }) => (
+function Section({ icon: Icon, title, desc, children }: { icon: React.ElementType; title: string; desc?: string; children: React.ReactNode }) {
+  return (
     <div className="glass-card rounded-xl overflow-hidden">
       <div className="px-5 py-3.5 border-b border-border flex items-center gap-2.5">
         <Icon className="w-4 h-4 text-accent" />
@@ -38,6 +16,28 @@ export function Settings() {
       <div className="p-5">{children}</div>
     </div>
   );
+}
+
+export function Settings() {
+  const refreshInterval = useStore((s) => s.refreshInterval);
+  const setRefreshInterval = useStore((s) => s.setRefreshInterval);
+  const error = useStore((s) => s.error);
+  const { refreshAll, setDbPath: setPath, setRefreshInterval: setInterval } = useDb();
+  const [dbPath, setDbPath] = useState("");
+  const [saved, setSaved] = useState(false);
+
+  async function handleSaveDbPath() {
+    if (!dbPath.trim()) return;
+    await setPath(dbPath.trim());
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+    refreshAll();
+  }
+
+  async function handleRefreshChange(val: number) {
+    setRefreshInterval(val);
+    await setInterval(val);
+  }
 
   return (
     <div className="space-y-5 max-w-2xl animate-slide-in">
