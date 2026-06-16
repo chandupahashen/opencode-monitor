@@ -59,6 +59,12 @@ jobs:
         env:
           TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
           TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
+      - name: Debug - find MSI location
+        shell: pwsh
+        run: |
+          $msi = Get-ChildItem -Recurse -Filter "*.msi" -ErrorAction SilentlyContinue | Select-Object -First 1
+          if ($msi) { Write-Host "MSI found at: $($msi.FullName)" } else { Write-Host "No MSI found anywhere" }
+          Get-ChildItem -Recurse -Path "src-tauri\target\release\bundle" -ErrorAction SilentlyContinue | Select-Object FullName, Length
       - name: Stage artifacts
         shell: pwsh
         run: |
