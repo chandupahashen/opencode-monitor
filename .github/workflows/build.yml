@@ -74,20 +74,19 @@ jobs:
             $version = $tag.TrimStart("v")
             $sig = Get-Content $sigFile.FullName -Raw
             $name = $msiFile.Name
-            @"
-            {
-              "version": "$version",
-              "notes": "See $tag release notes for details.",
-              "pub_date": "$(Get-Date -Format "yyyy-MM-ddTHH:mm:ssZ" -AsUTC)",
-              "platforms": {
-                "windows-x86_64": {
-                  "signature": "$sig".Trim(),
-                  "url": "https://github.com/${{ github.repository }}/releases/download/$tag/$([System.Uri]::EscapeDataString($name))"
+            $manifest = @{
+              version   = $version
+              notes     = "See $tag release notes for details."
+              pub_date  = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+              platforms = @{
+                "windows-x86_64" = @{
+                  signature = $sig.Trim()
+                  url       = "https://github.com/${{ github.repository }}/releases/download/$tag/$([System.Uri]::EscapeDataString($name))"
                 }
               }
             }
-            "@ | Set-Content "staging\update.json"
-            Write-Host "Updater manifest generated"
+            $manifest | ConvertTo-Json | Set-Content "staging\update.json"
+            Write-Host "Updater manifest generated for v$version"
           } else {
             Write-Host "No signature file found (unsigned build) - skipping updater manifest"
           }
