@@ -59,19 +59,18 @@ jobs:
         env:
           TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
           TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
-      - name: Generate updater manifest
+      - name: Stage artifacts
         shell: pwsh
         run: |
+          New-Item -ItemType Directory -Force -Path staging
+          $msiDir = "src-tauri\target\release\bundle\msi"
+          Copy-Item "$msiDir\*.msi" staging\
+          Copy-Item "$msiDir\*.msi.sig" staging\
           $tag = "${{ github.ref_name }}"
           $version = $tag.TrimStart("v")
-          $msiDir = "src-tauri\target\release\bundle\msi"
-          $sig = Get-ChildItem "$msiDir\*.msi.sig" | Select-Object -First 1
+          $sig = Get-Content "$msiDir\*.msi.sig" -Raw
           $msiFile = Get-ChildItem "$msiDir\*.msi" | Select-Object -First 1
-          if (-not $sig -or -not $msiFile) {
-            Write-Error "MSI or signature not found in $msiDir"
-            exit 1
-          }
-          $sigContent = Get-Content $sig.FullName -Raw
+          if (-not $msiFile) { Write-Error "MSI not found"; exit 1 }
           @"
           {
             "version": "$version",
@@ -79,21 +78,17 @@ jobs:
             "pub_date": "$(Get-Date -Format "yyyy-MM-ddTHH:mm:ssZ" -AsUTC)",
             "platforms": {
               "windows-x86_64": {
-                "signature": "$sigContent".Trim(),
+                "signature": "$sig".Trim(),
                 "url": "https://github.com/${{ github.repository }}/releases/download/$tag/$($msiFile.Name)"
               }
             }
           }
-          "@ | Set-Content "update.json"
-          Copy-Item "update.json" "src-tauri\target\release\update.json"
+          "@ | Set-Content "staging\update.json"
       - name: Upload artifacts
         uses: actions/upload-artifact@v6
         with:
           name: opencode-monitor-release
-          path: |
-            src-tauri/target/release/bundle/msi/*.msi
-            src-tauri/target/release/bundle/msi/*.msi.sig
-            src-tauri/target/release/update.json
+          path: staging/*
 
   release:
     if: startsWith(github.ref, 'refs/tags/v')
@@ -102,7 +97,6 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v6
       - uses: actions/download-artifact@v7
         with:
           name: opencode-monitor-release
