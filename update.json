@@ -1,11 +1,11 @@
 {
-  "version": "0.1.4",
+  "version": "1.5.2",
   "notes": "Latest release of OpenCode Monitor",
   "pub_date": "2026-06-16T00:00:00Z",
   "platforms": {
     "windows-x86_64": {
       "signature": "",
-      "url": "https://github.com/chandupalawattage/opencode-monitor/releases/download/v0.1.4/OpenCode.Monitor_0.1.4_x64_en-US.msi"
+      "url": "https://github.com/chandupahashen/opencode-monitor/releases/download/v1.5.2/OpenCode.Monitor_1.5.2_x64_en-US.msi"
     }
   }
 }
