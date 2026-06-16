@@ -59,38 +59,38 @@ jobs:
         env:
           TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
           TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
-      - name: Debug - find MSI location
-        shell: pwsh
-        run: |
-          $msi = Get-ChildItem -Recurse -Filter "*.msi" -ErrorAction SilentlyContinue | Select-Object -First 1
-          if ($msi) { Write-Host "MSI found at: $($msi.FullName)" } else { Write-Host "No MSI found anywhere" }
-          Get-ChildItem -Recurse -Path "src-tauri\target\release\bundle" -ErrorAction SilentlyContinue | Select-Object FullName, Length
       - name: Stage artifacts
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path staging
           $msiDir = "src-tauri\target\release\bundle\msi"
           Copy-Item "$msiDir\*.msi" staging\
-          Copy-Item "$msiDir\*.msi.sig" staging\
-          $tag = "${{ github.ref_name }}"
-          $version = $tag.TrimStart("v")
-          $sigFile = Get-ChildItem "$msiDir\*.msi.sig" | Select-Object -First 1
           $msiFile = Get-ChildItem "$msiDir\*.msi" | Select-Object -First 1
-          if (-not $sigFile -or -not $msiFile) { Write-Error "MSI or signature not found in $msiDir"; exit 1 }
-          $sig = Get-Content $sigFile.FullName -Raw
-          @"
-          {
-            "version": "$version",
-            "notes": "See $tag release notes for details.",
-            "pub_date": "$(Get-Date -Format "yyyy-MM-ddTHH:mm:ssZ" -AsUTC)",
-            "platforms": {
-              "windows-x86_64": {
-                "signature": "$sig".Trim(),
-                "url": "https://github.com/${{ github.repository }}/releases/download/$tag/$($msiFile.Name)"
+          if (-not $msiFile) { Write-Error "MSI not found in $msiDir"; exit 1 }
+          $sigFile = Get-ChildItem "$msiDir\*.msi.sig" | Select-Object -First 1
+          if ($sigFile) {
+            Copy-Item $sigFile.FullName staging\
+            $tag = "${{ github.ref_name }}"
+            $version = $tag.TrimStart("v")
+            $sig = Get-Content $sigFile.FullName -Raw
+            $name = $msiFile.Name
+            @"
+            {
+              "version": "$version",
+              "notes": "See $tag release notes for details.",
+              "pub_date": "$(Get-Date -Format "yyyy-MM-ddTHH:mm:ssZ" -AsUTC)",
+              "platforms": {
+                "windows-x86_64": {
+                  "signature": "$sig".Trim(),
+                  "url": "https://github.com/${{ github.repository }}/releases/download/$tag/$([System.Uri]::EscapeDataString($name))"
+                }
               }
             }
+            "@ | Set-Content "staging\update.json"
+            Write-Host "Updater manifest generated"
+          } else {
+            Write-Host "No signature file found (unsigned build) - skipping updater manifest"
           }
-          "@ | Set-Content "staging\update.json"
       - name: Upload artifacts
         uses: actions/upload-artifact@v6
         with:
@@ -110,8 +110,9 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v3
         with:
-          files: |
+          files: |-
             *.msi
             *.msi.sig
             update.json
+          fail_on_unmatched_files: false
           generate_release_notes: true
