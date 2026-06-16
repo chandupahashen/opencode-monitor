@@ -7,12 +7,17 @@ import { DateFilter } from "../components/DateFilter";
 import { SkeletonCard, SkeletonKPI, Skeleton } from "../components/Skeleton";
 
 function formatCost(c: number) {
-  if (c < 0.01) return `$${c.toFixed(4)}`;
-  if (c < 1) return `$${c.toFixed(3)}`;
-  return `$${c.toFixed(2)}`;
+  if (c >= 1_000_000_000_000) return `$${(c / 1_000_000_000_000).toFixed(2)}T`;
+  if (c >= 1_000_000_000) return `$${(c / 1_000_000_000).toFixed(2)}B`;
+  if (c >= 1_000_000) return `$${(c / 1_000_000).toFixed(2)}M`;
+  if (c >= 1_000) return `$${(c / 1_000).toFixed(2)}K`;
+  if (c >= 0.01) return `$${c.toFixed(2)}`;
+  return `$${c.toFixed(4)}`;
 }
 
 function formatTokens(n: number) {
+  if (n >= 1_000_000_000_000) return `${(n / 1_000_000_000_000).toFixed(1)}T`;
+  if (n >= 1_000_000_000) return `${(n / 1_000_000_000).toFixed(1)}B`;
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
   return String(n);
@@ -116,7 +121,7 @@ export function Dashboard() {
               </defs>
               <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#6b7280" }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 10, fill: "#6b7280" }} tickFormatter={formatTokens} axisLine={false} tickLine={false} />
-              <Tooltip contentStyle={tooltipStyle} />
+              <Tooltip contentStyle={tooltipStyle} formatter={(value: unknown) => [formatTokens(Number(value)), "Total"]} />
               <Area type="monotone" dataKey="total" stroke="#22d3ee" fill="url(#inputGrad)" strokeWidth={2.5} dot={false} />
             </AreaChart>
           </ResponsiveContainer>

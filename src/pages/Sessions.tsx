@@ -22,11 +22,17 @@ function formatDuration(start: number, end: number) {
 }
 
 function formatCost(c: number) {
-  if (c < 0.01) return `$${c.toFixed(4)}`;
-  return `$${c.toFixed(2)}`;
+  if (c >= 1_000_000_000_000) return `$${(c / 1_000_000_000_000).toFixed(2)}T`;
+  if (c >= 1_000_000_000) return `$${(c / 1_000_000_000).toFixed(2)}B`;
+  if (c >= 1_000_000) return `$${(c / 1_000_000).toFixed(2)}M`;
+  if (c >= 1_000) return `$${(c / 1_000).toFixed(2)}K`;
+  if (c >= 0.01) return `$${c.toFixed(2)}`;
+  return `$${c.toFixed(4)}`;
 }
 
 function formatTokens(n: number) {
+  if (n >= 1_000_000_000_000) return `${(n / 1_000_000_000_000).toFixed(1)}T`;
+  if (n >= 1_000_000_000) return `${(n / 1_000_000_000).toFixed(1)}B`;
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
   return String(n);

@@ -6,14 +6,20 @@ import { SkeletonCard, Skeleton } from "../components/Skeleton";
 import { projectDir } from "../utils/project";
 
 function formatTokens(n: number) {
+  if (n >= 1_000_000_000_000) return `${(n / 1_000_000_000_000).toFixed(1)}T`;
+  if (n >= 1_000_000_000) return `${(n / 1_000_000_000).toFixed(1)}B`;
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
   return String(n);
 }
 
 function formatCost(c: number) {
-  if (c < 0.01) return `$${c.toFixed(4)}`;
-  return `$${c.toFixed(2)}`;
+  if (c >= 1_000_000_000_000) return `$${(c / 1_000_000_000_000).toFixed(2)}T`;
+  if (c >= 1_000_000_000) return `$${(c / 1_000_000_000).toFixed(2)}B`;
+  if (c >= 1_000_000) return `$${(c / 1_000_000).toFixed(2)}M`;
+  if (c >= 1_000) return `$${(c / 1_000).toFixed(2)}K`;
+  if (c >= 0.01) return `$${c.toFixed(2)}`;
+  return `$${c.toFixed(4)}`;
 }
 
 const tooltipStyle = { background: "#1a1a25", border: "1px solid #2a2a3e", borderRadius: 8, fontSize: 12, boxShadow: "0 4px 20px rgba(0,0,0,0.4)" };
@@ -97,7 +103,7 @@ export function Projects() {
           <BarChart data={chartData}>
             <XAxis dataKey="name" tick={{ fontSize: 10, fill: "#6b7280" }} axisLine={false} tickLine={false} />
             <YAxis tick={{ fontSize: 10, fill: "#6b7280" }} tickFormatter={formatTokens} axisLine={false} tickLine={false} />
-            <Tooltip contentStyle={tooltipStyle} />
+            <Tooltip contentStyle={tooltipStyle} formatter={(value: unknown) => [formatTokens(Number(value)), "Tokens"]} />
             <Bar dataKey="tokens" fill="#22d3ee" radius={[4, 4, 0, 0]} maxBarSize={50} />
           </BarChart>
         </ResponsiveContainer>

@@ -8,12 +8,19 @@ import { DateFilter } from "../components/DateFilter";
 import { SkeletonCard, Skeleton } from "../components/Skeleton";
 
 function formatTokens(n: number) {
+  if (n >= 1_000_000_000_000) return `${(n / 1_000_000_000_000).toFixed(1)}T`;
+  if (n >= 1_000_000_000) return `${(n / 1_000_000_000).toFixed(1)}B`;
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
   return String(n);
 }
 
 function formatCost(c: number) {
+  if (c >= 1_000_000_000_000) return `$${(c / 1_000_000_000_000).toFixed(2)}T`;
+  if (c >= 1_000_000_000) return `$${(c / 1_000_000_000).toFixed(2)}B`;
+  if (c >= 1_000_000) return `$${(c / 1_000_000).toFixed(2)}M`;
+  if (c >= 1_000) return `$${(c / 1_000).toFixed(2)}K`;
+  if (c >= 0.01) return `$${c.toFixed(2)}`;
   return `$${c.toFixed(4)}`;
 }
 
@@ -69,7 +76,7 @@ export function Analytics() {
             <CartesianGrid strokeDasharray="3 3" stroke="#2a2a3e" strokeOpacity={0.5} />
             <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#6b7280" }} axisLine={false} tickLine={false} />
             <YAxis tick={{ fontSize: 10, fill: "#6b7280" }} tickFormatter={formatTokens} axisLine={false} tickLine={false} />
-            <Tooltip contentStyle={tooltipStyle} />
+                          <Tooltip contentStyle={tooltipStyle} formatter={(value: unknown, name: unknown) => [formatTokens(Number(value)), String(name)]} />
             <Legend wrapperStyle={{ fontSize: 11, paddingTop: 8 }} />
             <Area type="monotone" dataKey="input" stackId="1" stroke="#22d3ee" fill="#22d3ee" fillOpacity={0.4} strokeWidth={1.5} />
             <Area type="monotone" dataKey="output" stackId="1" stroke="#34d399" fill="#34d399" fillOpacity={0.4} strokeWidth={1.5} />
@@ -90,8 +97,8 @@ export function Analytics() {
             <LineChart data={stackedTrend}>
               <CartesianGrid strokeDasharray="3 3" stroke="#2a2a3e" strokeOpacity={0.5} />
               <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#6b7280" }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 10, fill: "#6b7280" }} tickFormatter={(v: number) => `$${v.toFixed(2)}`} axisLine={false} tickLine={false} />
-              <Tooltip contentStyle={tooltipStyle} />
+              <YAxis tick={{ fontSize: 10, fill: "#6b7280" }} tickFormatter={formatCost} axisLine={false} tickLine={false} />
+              <Tooltip contentStyle={tooltipStyle} formatter={(value: unknown, name: unknown) => [formatCost(Number(value)), String(name)]} />
               <Line type="monotone" dataKey="cost" stroke="#34d399" strokeWidth={2.5} dot={false} />
             </LineChart>
           </ResponsiveContainer>
@@ -107,7 +114,7 @@ export function Analytics() {
               <CartesianGrid strokeDasharray="3 3" stroke="#2a2a3e" strokeOpacity={0.5} />
               <XAxis dataKey="model" tick={{ fontSize: 9, fill: "#6b7280" }} tickFormatter={(v: string) => decodeModel(v).short} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 10, fill: "#6b7280" }} tickFormatter={formatTokens} axisLine={false} tickLine={false} />
-              <Tooltip contentStyle={tooltipStyle} />
+              <Tooltip contentStyle={tooltipStyle} formatter={(value: unknown, name: unknown) => [formatTokens(Number(value)), String(name)]} />
               <Bar dataKey="total_tokens" fill="#22d3ee" radius={[4, 4, 0, 0]} maxBarSize={40} />
             </BarChart>
           </ResponsiveContainer>
