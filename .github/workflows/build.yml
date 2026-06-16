@@ -68,9 +68,10 @@ jobs:
           Copy-Item "$msiDir\*.msi.sig" staging\
           $tag = "${{ github.ref_name }}"
           $version = $tag.TrimStart("v")
-          $sig = Get-Content "$msiDir\*.msi.sig" -Raw
+          $sigFile = Get-ChildItem "$msiDir\*.msi.sig" | Select-Object -First 1
           $msiFile = Get-ChildItem "$msiDir\*.msi" | Select-Object -First 1
-          if (-not $msiFile) { Write-Error "MSI not found"; exit 1 }
+          if (-not $sigFile -or -not $msiFile) { Write-Error "MSI or signature not found in $msiDir"; exit 1 }
+          $sig = Get-Content $sigFile.FullName -Raw
           @"
           {
             "version": "$version",
