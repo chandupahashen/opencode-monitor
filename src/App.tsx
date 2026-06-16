@@ -13,7 +13,12 @@ const Settings = lazy(() => import("./pages/Settings").then(m => ({ default: m.S
 
 function App() {
   const currentTab = useStore((s) => s.currentTab);
+  const theme = useStore((s) => s.theme);
   const { refreshAll } = useDb();
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+  }, [theme]);
 
   useEffect(() => {
     refreshAll();

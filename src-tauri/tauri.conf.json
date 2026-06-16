@@ -26,6 +26,15 @@
       "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' asset: https://asset.localhost; font-src 'self' data:"
     }
   },
+  "plugins": {
+    "updater": {
+      "endpoints": ["https://raw.githubusercontent.com/chandupalawattage/opencode-monitor/main/update.json"],
+      "pubkey": "~/.tauri/opencode-monitor.pub",
+      "windows": {
+        "installMode": "passive"
+      }
+    }
+  },
   "bundle": {
     "active": true,
     "targets": "msi",

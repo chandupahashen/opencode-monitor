@@ -22,15 +22,16 @@ fn dirs_next() -> Option<PathBuf> {
     }
     if let Some(local) = std::env::var_os("LOCALAPPDATA") {
         let mut p = PathBuf::from(&local);
-        p.pop();
-        p.push("Local");
-        p.push("share");
         p.push("opencode");
         if p.join("opencode.db").exists() {
             return Some(p.join("opencode.db"));
         }
     }
     None
+}
+
+pub fn verify_connection(path: &str) -> bool {
+    Connection::open(path).is_ok()
 }
 
 const SCHEMA_VERSION: i64 = 1;

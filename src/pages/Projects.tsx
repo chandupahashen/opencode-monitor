@@ -4,23 +4,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recha
 import { DateFilter } from "../components/DateFilter";
 import { SkeletonCard, Skeleton } from "../components/Skeleton";
 import { projectDir } from "../utils/project";
-
-function formatTokens(n: number) {
-  if (n >= 1_000_000_000_000) return `${(n / 1_000_000_000_000).toFixed(1)}T`;
-  if (n >= 1_000_000_000) return `${(n / 1_000_000_000).toFixed(1)}B`;
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
-  return String(n);
-}
-
-function formatCost(c: number) {
-  if (c >= 1_000_000_000_000) return `$${(c / 1_000_000_000_000).toFixed(2)}T`;
-  if (c >= 1_000_000_000) return `$${(c / 1_000_000_000).toFixed(2)}B`;
-  if (c >= 1_000_000) return `$${(c / 1_000_000).toFixed(2)}M`;
-  if (c >= 1_000) return `$${(c / 1_000).toFixed(2)}K`;
-  if (c >= 0.01) return `$${c.toFixed(2)}`;
-  return `$${c.toFixed(4)}`;
-}
+import { formatCost, formatTokens } from "../utils/format";
 
 const tooltipStyle = { background: "#1a1a25", border: "1px solid #2a2a3e", borderRadius: 8, fontSize: 12, boxShadow: "0 4px 20px rgba(0,0,0,0.4)" };
 

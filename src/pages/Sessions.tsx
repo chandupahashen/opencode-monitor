@@ -5,6 +5,7 @@ import { JsonPreview } from "../components/JsonPreview";
 import { Search, ChevronDown, ChevronUp, X, Code2, Layers, Zap, Activity } from "lucide-react";
 import { DateFilter } from "../components/DateFilter";
 import { projectName } from "../utils/project";
+import { formatCost, formatTokens } from "../utils/format";
 import { SkeletonTable, Skeleton } from "../components/Skeleton";
 import { decodeModel } from "../utils/model";
 import type { SessionRow, SessionDetail } from "../types";
@@ -19,23 +20,6 @@ function formatDuration(start: number, end: number) {
   if (diff < 60) return `${diff}s`;
   if (diff < 3600) return `${Math.floor(diff / 60)}m ${diff % 60}s`;
   return `${Math.floor(diff / 3600)}h ${Math.floor((diff % 3600) / 60)}m`;
-}
-
-function formatCost(c: number) {
-  if (c >= 1_000_000_000_000) return `$${(c / 1_000_000_000_000).toFixed(2)}T`;
-  if (c >= 1_000_000_000) return `$${(c / 1_000_000_000).toFixed(2)}B`;
-  if (c >= 1_000_000) return `$${(c / 1_000_000).toFixed(2)}M`;
-  if (c >= 1_000) return `$${(c / 1_000).toFixed(2)}K`;
-  if (c >= 0.01) return `$${c.toFixed(2)}`;
-  return `$${c.toFixed(4)}`;
-}
-
-function formatTokens(n: number) {
-  if (n >= 1_000_000_000_000) return `${(n / 1_000_000_000_000).toFixed(1)}T`;
-  if (n >= 1_000_000_000) return `${(n / 1_000_000_000).toFixed(1)}B`;
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
-  return String(n);
 }
 
 function shortenId(id: string) {
@@ -182,7 +166,9 @@ export function Sessions() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((s) => (
+                {filtered.map((s) => {
+                  const dm = decodeModel(s.model);
+                  return (
                   <tr
                     key={s.id}
                     onClick={() => handleSelect(s.id)}
@@ -198,15 +184,15 @@ export function Sessions() {
                       <div className="text-[10px] text-gray-600 font-mono">{shortenId(s.id)}</div>
                     </td>
                     <td className="p-3">
-                      <span className={`text-xs font-medium ${decodeModel(s.model).color}`}>{decodeModel(s.model).short}</span>
-                      {decodeModel(s.model).tier && (
+                      <span className={`text-xs font-medium ${dm.color}`}>{dm.short}</span>
+                      {dm.tier && (
                         <span className={`ml-1.5 inline-flex items-center gap-0.5 px-1 py-0.5 rounded text-[9px] font-medium ${
-                          decodeModel(s.model).tier === "high"
+                          dm.tier === "high"
                             ? "bg-red-950/60 text-red-accent border border-red-900/50"
                             : "bg-yellow-950/60 text-yellow-accent border border-yellow-900/50"
                         }`}>
-                          {decodeModel(s.model).tier === "high" ? <Zap className="w-2.5 h-2.5" /> : <Activity className="w-2.5 h-2.5" />}
-                          {decodeModel(s.model).tier}
+                          {dm.tier === "high" ? <Zap className="w-2.5 h-2.5" /> : <Activity className="w-2.5 h-2.5" />}
+                          {dm.tier}
                         </span>
                       )}
                     </td>
@@ -218,7 +204,8 @@ export function Sessions() {
                     </td>
                     <td className="p-3 text-right text-xs text-gray-500">{formatDuration(s.time_created, s.time_updated)}</td>
                   </tr>
-                ))}
+                  );
+                })}
                 {filtered.length === 0 && (
                   <tr>
                     <td colSpan={6} className="p-10 text-center text-gray-600">

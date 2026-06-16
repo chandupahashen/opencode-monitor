@@ -111,7 +111,8 @@ pub(crate) fn extract_project_name(id: &str, dir: Option<&str>) -> String {
     if trimmed.len() <= 16 {
         return trimmed.to_string();
     }
-    format!("{}…", &trimmed[..12])
+    let truncated: String = trimmed.chars().take(12).collect();
+    format!("{}…", truncated)
 }
 
 #[derive(Debug, Serialize)]

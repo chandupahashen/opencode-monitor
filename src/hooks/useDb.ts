@@ -95,13 +95,15 @@ export function useDb() {
           fetchDailyActivity(),
           fetchCostBreakdown(opts),
         ]);
-      useStore.getState().setOverview(overview);
-      useStore.getState().setSessions(sessions);
-      useStore.getState().setTokenTrends(tokenTrends);
-      useStore.getState().setModelUsage(modelUsage);
-      useStore.getState().setProjectStats(projectStats);
-      useStore.getState().setDailyActivity(dailyActivity);
-      useStore.getState().setCostBreakdown(costBreakdown);
+      useStore.setState({
+        overview,
+        sessions,
+        tokenTrends,
+        modelUsage,
+        projectStats,
+        dailyActivity,
+        costBreakdown,
+      });
     } catch (e: unknown) {
       useStore.getState().setError(String(e));
     } finally {

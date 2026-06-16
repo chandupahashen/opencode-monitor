@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useStore } from "../store/useStore";
 import { useDb } from "../hooks/useDb";
-import { Save, Database, RefreshCw, Palette, Info } from "lucide-react";
+import { Save, Database, RefreshCw, Palette, Info, DownloadCloud } from "lucide-react";
+import { check } from "@tauri-apps/plugin-updater";
+import type { HealthStatus } from "../types";
 
 function Section({ icon: Icon, title, desc, children }: { icon: React.ElementType; title: string; desc?: string; children: React.ReactNode }) {
   return (
@@ -21,22 +23,60 @@ function Section({ icon: Icon, title, desc, children }: { icon: React.ElementTyp
 export function Settings() {
   const refreshInterval = useStore((s) => s.refreshInterval);
   const setRefreshInterval = useStore((s) => s.setRefreshInterval);
+  const theme = useStore((s) => s.theme);
+  const setTheme = useStore((s) => s.setTheme);
   const error = useStore((s) => s.error);
-  const { refreshAll, setDbPath: setPath, setRefreshInterval: setInterval } = useDb();
+  const { refreshAll, setDbPath: setPath, setRefreshInterval: setInterval, fetchHealthStatus } = useDb();
   const [dbPath, setDbPath] = useState("");
   const [saved, setSaved] = useState(false);
+  const [health, setHealth] = useState<HealthStatus | null>(null);
+  const [updateState, setUpdateState] = useState<{ status: "idle" | "checking" | "available" | "downloading" | "uptodate" | "error"; version?: string; body?: string; error?: string }>({ status: "idle" });
+
+  useEffect(() => {
+    fetchHealthStatus().then(setHealth).catch(() => {});
+  }, [fetchHealthStatus]);
 
   async function handleSaveDbPath() {
     if (!dbPath.trim()) return;
-    await setPath(dbPath.trim());
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-    refreshAll();
+    try {
+      await setPath(dbPath.trim());
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+      refreshAll();
+    } catch {
+      // error is set in the store via refreshAll
+    }
   }
 
   async function handleRefreshChange(val: number) {
     setRefreshInterval(val);
     await setInterval(val);
+  }
+
+  async function handleCheckUpdate() {
+    setUpdateState({ status: "checking" });
+    try {
+      const update = await check();
+      if (update) {
+        setUpdateState({ status: "available", version: update.version, body: update.body });
+      } else {
+        setUpdateState({ status: "uptodate" });
+      }
+    } catch (e) {
+      setUpdateState({ status: "error", error: String(e) });
+    }
+  }
+
+  async function handleInstallUpdate() {
+    setUpdateState((prev) => ({ ...prev, status: "downloading" }));
+    try {
+      const update = await check();
+      if (update) {
+        await update.downloadAndInstall();
+      }
+    } catch (e) {
+      setUpdateState({ status: "error", error: String(e) });
+    }
   }
 
   return (
@@ -87,16 +127,97 @@ export function Settings() {
       </Section>
 
       <Section icon={Palette} title="Theme">
-        <select className="w-full px-3 py-2 bg-surface-800 border border-border rounded-lg text-sm focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20 text-gray-200" defaultValue="dark">
+        <select
+          className="w-full px-3 py-2 bg-surface-800 border border-border rounded-lg text-sm focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20 text-gray-200"
+          value={theme}
+          onChange={(e) => setTheme(e.target.value)}
+        >
           <option value="dark">Dark</option>
           <option value="system">System</option>
           <option value="light">Light</option>
         </select>
       </Section>
 
+      <Section icon={DownloadCloud} title="Updates">
+        <div className="space-y-3">
+          <p className="text-xs text-gray-500">
+            Current version: <span className="text-accent font-mono">{health?.version ?? "—"}</span>
+          </p>
+
+          {updateState.status === "idle" && (
+            <button
+              onClick={handleCheckUpdate}
+              className="flex items-center gap-2 px-4 py-2 bg-accent/20 hover:bg-accent/30 text-accent border border-accent/30 rounded-lg text-sm transition-all font-medium"
+            >
+              <DownloadCloud className="w-4 h-4" />
+              Check for Updates
+            </button>
+          )}
+
+          {updateState.status === "checking" && (
+            <div className="flex items-center gap-2 text-sm text-gray-400">
+              <div className="w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+              Checking for updates...
+            </div>
+          )}
+
+          {updateState.status === "uptodate" && (
+            <div className="space-y-2">
+              <p className="text-sm text-green-accent">You're up to date!</p>
+              <button
+                onClick={handleCheckUpdate}
+                className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
+              >
+                Check again
+              </button>
+            </div>
+          )}
+
+          {updateState.status === "available" && (
+            <div className="space-y-3">
+              <p className="text-sm text-yellow-accent font-medium">
+                Update available: v{updateState.version}
+              </p>
+              {updateState.body && (
+                <div className="text-xs text-gray-400 bg-surface-800 rounded-lg p-3 max-h-32 overflow-y-auto">
+                  {updateState.body}
+                </div>
+              )}
+              <button
+                onClick={handleInstallUpdate}
+                className="flex items-center gap-2 px-4 py-2 bg-green-accent/20 hover:bg-green-accent/30 text-green-accent border border-green-accent/30 rounded-lg text-sm transition-all font-medium"
+              >
+                <DownloadCloud className="w-4 h-4" />
+                Download & Install
+              </button>
+            </div>
+          )}
+
+          {updateState.status === "downloading" && (
+            <div className="flex items-center gap-2 text-sm text-gray-400">
+              <div className="w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+              Downloading update...
+            </div>
+          )}
+
+          {updateState.status === "error" && (
+            <div className="space-y-2">
+              <p className="text-sm text-red-accent">Update check failed</p>
+              <p className="text-xs text-gray-500">{updateState.error}</p>
+              <button
+                onClick={handleCheckUpdate}
+                className="text-xs text-accent hover:text-accent/80 transition-colors"
+              >
+                Try again
+              </button>
+            </div>
+          )}
+        </div>
+      </Section>
+
       <Section icon={Info} title="About OpenCode Monitor">
         <div className="space-y-1 text-sm text-gray-400">
-          <p>Version 0.1.0</p>
+          <p>Version {health?.version ?? "—"}</p>
           <p className="text-xs text-gray-500">
             A Tauri desktop app for monitoring <span className="text-accent">opencode</span> AI coding agent usage.
           </p>
@@ -104,6 +225,14 @@ export function Settings() {
             Reads data directly from the opencode SQLite database <span className="text-gray-400">(read-only)</span>.
           </p>
           <p className="text-xs text-gray-600 pt-2">Built with Tauri v2 + React + Rust</p>
+          {health && (
+            <div className="mt-3 pt-3 border-t border-border space-y-1">
+              <p className="text-xs text-gray-500">Uptime: {health.uptime}</p>
+              <p className="text-xs text-gray-500">
+                Database: {health.db_connected ? <span className="text-green-accent">Connected</span> : <span className="text-red-accent">Disconnected</span>}
+              </p>
+            </div>
+          )}
         </div>
       </Section>
     </div>

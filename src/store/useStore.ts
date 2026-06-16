@@ -15,6 +15,7 @@ interface AppStore {
   currentTab: string;
   dateFrom: string;
   dateTo: string;
+  theme: string;
 
   setOverview: (data: Overview) => void;
   setSessions: (data: SessionRow[]) => void;
@@ -29,6 +30,7 @@ interface AppStore {
   setCurrentTab: (t: string) => void;
   setDateFrom: (d: string) => void;
   setDateTo: (d: string) => void;
+  setTheme: (t: string) => void;
 }
 
 export const useStore = create<AppStore>((set) => ({
@@ -45,6 +47,7 @@ export const useStore = create<AppStore>((set) => ({
   currentTab: "dashboard",
   dateFrom: "",
   dateTo: "",
+  theme: "dark",
 
   setOverview: (data) => set({ overview: data }),
   setSessions: (data) => set({ sessions: data }),
@@ -59,4 +62,5 @@ export const useStore = create<AppStore>((set) => ({
   setCurrentTab: (t) => set({ currentTab: t }),
   setDateFrom: (d) => set({ dateFrom: d }),
   setDateTo: (d) => set({ dateTo: d }),
+  setTheme: (t) => set({ theme: t }),
 }));

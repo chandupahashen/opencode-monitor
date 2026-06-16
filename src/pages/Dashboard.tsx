@@ -3,25 +3,9 @@ import { Activity, Cpu, DollarSign, Zap, BookOpen, Briefcase } from "lucide-reac
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { useMemo } from "react";
 import { decodeModel } from "../utils/model";
+import { formatCost, formatTokens } from "../utils/format";
 import { DateFilter } from "../components/DateFilter";
 import { SkeletonCard, SkeletonKPI, Skeleton } from "../components/Skeleton";
-
-function formatCost(c: number) {
-  if (c >= 1_000_000_000_000) return `$${(c / 1_000_000_000_000).toFixed(2)}T`;
-  if (c >= 1_000_000_000) return `$${(c / 1_000_000_000).toFixed(2)}B`;
-  if (c >= 1_000_000) return `$${(c / 1_000_000).toFixed(2)}M`;
-  if (c >= 1_000) return `$${(c / 1_000).toFixed(2)}K`;
-  if (c >= 0.01) return `$${c.toFixed(2)}`;
-  return `$${c.toFixed(4)}`;
-}
-
-function formatTokens(n: number) {
-  if (n >= 1_000_000_000_000) return `${(n / 1_000_000_000_000).toFixed(1)}T`;
-  if (n >= 1_000_000_000) return `${(n / 1_000_000_000).toFixed(1)}B`;
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
-  return String(n);
-}
 
 const COLORS = ["#22d3ee", "#fbbf24", "#34d399", "#a78bfa", "#fb7185", "#f472b6", "#2dd4bf", "#fb923c"];
 
