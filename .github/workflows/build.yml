@@ -64,8 +64,14 @@ jobs:
         run: |
           $tag = "${{ github.ref_name }}"
           $version = $tag.TrimStart("v")
-          $sig = Get-Content "src-tauri/target/release/**/*.msi.sig" -Raw
-          $msiFile = Get-ChildItem "src-tauri/target/release/**/*.msi" | Select-Object -First 1
+          $msiDir = "src-tauri\target\release\bundle\msi"
+          $sig = Get-ChildItem "$msiDir\*.msi.sig" | Select-Object -First 1
+          $msiFile = Get-ChildItem "$msiDir\*.msi" | Select-Object -First 1
+          if (-not $sig -or -not $msiFile) {
+            Write-Error "MSI or signature not found in $msiDir"
+            exit 1
+          }
+          $sigContent = Get-Content $sig.FullName -Raw
           @"
           {
             "version": "$version",
@@ -73,20 +79,20 @@ jobs:
             "pub_date": "$(Get-Date -Format "yyyy-MM-ddTHH:mm:ssZ" -AsUTC)",
             "platforms": {
               "windows-x86_64": {
-                "signature": "$sig",
+                "signature": "$sigContent".Trim(),
                 "url": "https://github.com/${{ github.repository }}/releases/download/$tag/$($msiFile.Name)"
               }
             }
           }
           "@ | Set-Content "update.json"
-          Copy-Item "update.json" "src-tauri/target/release/update.json"
+          Copy-Item "update.json" "src-tauri\target\release\update.json"
       - name: Upload artifacts
         uses: actions/upload-artifact@v6
         with:
           name: opencode-monitor-release
           path: |
-            src-tauri/target/release/**/*.msi
-            src-tauri/target/release/**/*.msi.sig
+            src-tauri/target/release/bundle/msi/*.msi
+            src-tauri/target/release/bundle/msi/*.msi.sig
             src-tauri/target/release/update.json
 
   release:
