@@ -87,17 +87,15 @@ pub struct ModelStat {
 pub struct ProjectStat {
     pub project_id: String,
     pub project_name: String,
+    /// Full worktree / directory path for display. Frontend can show this instead of deriving from id.
+    pub directory: Option<String>,
     pub session_count: i64,
     pub total_tokens: i64,
     pub total_cost: f64,
 }
 
 pub(crate) fn extract_project_name(id: &str, dir: Option<&str>) -> String {
-    let normalized = id.replace('\\', "/");
-    let parts: Vec<&str> = normalized.split('/').filter(|s| !s.is_empty()).collect();
-    if parts.len() > 1 {
-        return parts[parts.len() - 1].to_string();
-    }
+    // Prefer directory / worktree basename if available (new DB has proper project.worktree)
     if let Some(d) = dir {
         let dn = d.replace('\\', "/");
         let dp: Vec<&str> = dn.split('/').filter(|s| !s.is_empty()).collect();
@@ -107,12 +105,58 @@ pub(crate) fn extract_project_name(id: &str, dir: Option<&str>) -> String {
             }
         }
     }
+    let normalized = id.replace('\\', "/");
+    let parts: Vec<&str> = normalized.split('/').filter(|s| !s.is_empty()).collect();
+    if parts.len() > 1 {
+        return parts[parts.len() - 1].to_string();
+    }
     let trimmed = id.trim();
     if trimmed.len() <= 16 {
         return trimmed.to_string();
     }
     let truncated: String = trimmed.chars().take(12).collect();
     format!("{}…", truncated)
+}
+
+/// Extract readable model id from raw DB value.
+/// New DB stores model as JSON like `{"id":"deepseek-v4-flash-free","providerID":"opencode","variant":"max"}`.
+/// Old DB stored plain string. This handles both + optional `modelID` key used in message table.
+pub(crate) fn extract_model_id(raw: &str) -> String {
+    let trimmed = raw.trim();
+    if trimmed.is_empty() {
+        return trimmed.to_string();
+    }
+    // Try JSON parse
+    if (trimmed.starts_with('{') && trimmed.ends_with('}')) || trimmed.starts_with('"') {
+        if let Ok(v) = serde_json::from_str::<serde_json::Value>(trimmed) {
+            if let Some(obj) = v.as_object() {
+                if let Some(id) = obj.get("id").and_then(|x| x.as_str()) {
+                    return id.to_string();
+                }
+                if let Some(mid) = obj.get("modelID").and_then(|x| x.as_str()) {
+                    return mid.to_string();
+                }
+                if let Some(mid) = obj.get("modelId").and_then(|x| x.as_str()) {
+                    return mid.to_string();
+                }
+            } else if let Some(s) = v.as_str() {
+                return s.to_string();
+            }
+        }
+    }
+    // Handle slash provider prefix like "opencode/deepseek-v4-flash-free"
+    if let Some(idx) = trimmed.rfind('/') {
+        // Only split if left part looks like provider (no spaces, no json)
+        let left = &trimmed[..idx];
+        if !left.contains(' ') && !left.contains('{') {
+            return trimmed[idx + 1..].to_string();
+        }
+    }
+    trimmed.to_string()
+}
+
+pub(crate) fn normalize_model_filter(input: &str) -> String {
+    extract_model_id(input)
 }
 
 #[derive(Debug, Serialize)]

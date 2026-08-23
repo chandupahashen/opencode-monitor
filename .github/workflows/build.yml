@@ -85,8 +85,9 @@ jobs:
                 }
               }
             }
-            $manifest | ConvertTo-Json | Set-Content "staging\update.json"
+            $manifest | ConvertTo-Json -Depth 10 | Set-Content "staging\update.json"
             Write-Host "Updater manifest generated for v$version"
+            Get-Content "staging\update.json" | Write-Host
           } else {
             Write-Host "No signature file found (unsigned build) - skipping updater manifest"
           }
@@ -115,3 +116,18 @@ jobs:
             update.json
           fail_on_unmatched_files: false
           generate_release_notes: true
+      - name: Sync update.json to main branch (for old clients using raw.githubusercontent endpoint)
+        shell: bash
+        run: |
+          if [ ! -f update.json ]; then echo "No update.json to sync — skipping"; exit 0; fi
+          echo "Syncing update.json to main branch..."
+          git clone --depth 1 --branch main https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git ../main-branch
+          cp -v update.json ../main-branch/update.json
+          cd ../main-branch
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet update.json; then echo "No changes to update.json"; exit 0; fi
+          git add update.json
+          git commit -m "chore: update update.json for ${{ github.ref_name }} [skip ci]"
+          git push origin main
+          echo "update.json synced to main"

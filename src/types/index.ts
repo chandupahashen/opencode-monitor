@@ -78,6 +78,7 @@ export interface ModelStat {
 export interface ProjectStat {
   project_id: string;
   project_name: string;
+  directory: string | null;
   session_count: number;
   total_tokens: number;
   total_cost: number;

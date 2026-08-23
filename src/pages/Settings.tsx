@@ -1,8 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useStore } from "../store/useStore";
 import { useDb } from "../hooks/useDb";
-import { Save, Database, RefreshCw, Palette, Info, DownloadCloud } from "lucide-react";
+import { Save, Database, RefreshCw, Palette, Info, DownloadCloud, RotateCcw } from "lucide-react";
 import { check } from "@tauri-apps/plugin-updater";
+import type { Update } from "@tauri-apps/plugin-updater";
+import { relaunch } from "@tauri-apps/plugin-process";
 import type { HealthStatus } from "../types";
 
 function Section({ icon: Icon, title, desc, children }: { icon: React.ElementType; title: string; desc?: string; children: React.ReactNode }) {
@@ -30,7 +32,14 @@ export function Settings() {
   const [dbPath, setDbPath] = useState("");
   const [saved, setSaved] = useState(false);
   const [health, setHealth] = useState<HealthStatus | null>(null);
-  const [updateState, setUpdateState] = useState<{ status: "idle" | "checking" | "available" | "downloading" | "uptodate" | "error"; version?: string; body?: string; error?: string }>({ status: "idle" });
+  const [updateState, setUpdateState] = useState<{
+    status: "idle" | "checking" | "available" | "downloading" | "ready" | "uptodate" | "error";
+    version?: string;
+    body?: string;
+    error?: string;
+    progress?: number;
+  }>({ status: "idle" });
+  const pendingUpdateRef = useRef<Update | null>(null);
 
   useEffect(() => {
     fetchHealthStatus().then(setHealth).catch(() => {});
@@ -55,25 +64,64 @@ export function Settings() {
 
   async function handleCheckUpdate() {
     setUpdateState({ status: "checking" });
+    pendingUpdateRef.current = null;
     try {
       const update = await check();
       if (update) {
+        pendingUpdateRef.current = update;
         setUpdateState({ status: "available", version: update.version, body: update.body });
       } else {
         setUpdateState({ status: "uptodate" });
       }
     } catch (e) {
-      setUpdateState({ status: "error", error: String(e) });
+      const msg = String(e);
+      // Improve error message for common causes
+      const hint = msg.includes("signature") || msg.includes("verify")
+        ? " (signature verification failed — ensure the release is signed with TAURI_PRIVATE_KEY)"
+        : msg.includes("404") || msg.includes("not found")
+          ? " (update manifest not found — check that a GitHub Release with update.json exists)"
+          : "";
+      setUpdateState({ status: "error", error: msg + hint });
     }
   }
 
   async function handleInstallUpdate() {
-    setUpdateState((prev) => ({ ...prev, status: "downloading" }));
+    const update = pendingUpdateRef.current;
+    if (!update) {
+      // No cached update, re-check
+      return handleCheckUpdate();
+    }
+    setUpdateState((prev) => ({ ...prev, status: "downloading", progress: 0 }));
     try {
-      const update = await check();
-      if (update) {
-        await update.downloadAndInstall();
-      }
+      let downloaded = 0;
+      let contentLength: number | undefined;
+      await update.downloadAndInstall((event) => {
+        switch (event.event) {
+          case "Started":
+            contentLength = event.data.contentLength;
+            setUpdateState((prev) => ({ ...prev, progress: 0 }));
+            break;
+          case "Progress":
+            downloaded += event.data.chunkLength;
+            if (contentLength) {
+              const pct = Math.round((downloaded / contentLength) * 100);
+              setUpdateState((prev) => ({ ...prev, progress: pct }));
+            }
+            break;
+          case "Finished":
+            setUpdateState((prev) => ({ ...prev, progress: 100 }));
+            break;
+        }
+      });
+      setUpdateState((prev) => ({ ...prev, status: "ready" }));
+      // Small delay to let UI show ready state before relaunch
+      setTimeout(async () => {
+        try {
+          await relaunch();
+        } catch (e) {
+          setUpdateState({ status: "error", error: `Install succeeded but restart failed: ${String(e)}. Please restart manually.` });
+        }
+      }, 800);
     } catch (e) {
       setUpdateState({ status: "error", error: String(e) });
     }
@@ -190,13 +238,33 @@ export function Settings() {
                 <DownloadCloud className="w-4 h-4" />
                 Download & Install
               </button>
+              <p className="text-[11px] text-gray-600">The app will restart automatically after installation.</p>
             </div>
           )}
 
           {updateState.status === "downloading" && (
-            <div className="flex items-center gap-2 text-sm text-gray-400">
-              <div className="w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin" />
-              Downloading update...
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm text-gray-400">
+                <div className="w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+                Downloading update{typeof updateState.progress === "number" ? ` — ${updateState.progress}%` : "..."}
+              </div>
+              {typeof updateState.progress === "number" && (
+                <div className="h-1.5 bg-surface-700 rounded-full overflow-hidden">
+                  <div className="h-full bg-accent transition-all" style={{ width: `${updateState.progress}%` }} />
+                </div>
+              )}
+            </div>
+          )}
+
+          {updateState.status === "ready" && (
+            <div className="space-y-2">
+              <p className="text-sm text-green-accent flex items-center gap-2">
+                <RotateCcw className="w-4 h-4" />
+                Update downloaded — restarting...
+              </p>
+              <div className="h-1.5 bg-surface-700 rounded-full overflow-hidden">
+                <div className="h-full bg-green-accent w-full" />
+              </div>
             </div>
           )}
 

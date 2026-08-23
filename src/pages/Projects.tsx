@@ -96,7 +96,7 @@ export function Projects() {
       <div className="grid gap-3">
         {projectStats.slice(0, 20).map((p, i) => {
           const name = p.project_name;
-          const dir = projectDir(p.project_id);
+          const dir = p.directory ? p.directory.replace(/\\/g, "/") : projectDir(p.project_id);
           const pct = Math.min(100, (p.total_tokens / maxTokens) * 100);
           return (
             <div key={p.project_id} className="glass-card rounded-xl p-4">
