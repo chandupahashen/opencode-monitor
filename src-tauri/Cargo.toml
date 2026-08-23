@@ -1,7 +1,13 @@
 [package]
 name = "opencode-monitor"
-version = "1.5.4"
+version = "1.5.5"
 edition = "2021"
+description = "Desktop dashboard for monitoring opencode AI assistant usage"
+authors = ["chandupahashen"]
+repository = "https://github.com/chandupahashen/opencode-monitor"
+license = "MIT"
+keywords = ["tauri", "opencode", "dashboard", "ai", "monitor"]
+categories = ["development-tools"]
 
 [lib]
 name = "opencode_monitor_lib"

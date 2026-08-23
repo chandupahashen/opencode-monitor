@@ -1,8 +1,26 @@
 {
   "name": "opencode-monitor",
   "private": true,
-  "version": "1.5.4",
+  "version": "1.5.5",
   "type": "module",
+  "license": "MIT",
+  "author": "chandupahashen <https://github.com/chandupahashen>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/chandupahashen/opencode-monitor.git"
+  },
+  "homepage": "https://github.com/chandupahashen/opencode-monitor",
+  "bugs": {
+    "url": "https://github.com/chandupahashen/opencode-monitor/issues"
+  },
+  "keywords": [
+    "opencode",
+    "tauri",
+    "dashboard",
+    "ai",
+    "monitor",
+    "sqlite"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",

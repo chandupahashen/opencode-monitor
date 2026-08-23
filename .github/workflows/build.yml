@@ -6,6 +6,7 @@ on:
     tags: ["v*"]
   pull_request:
     branches: [main, master]
+  workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always
@@ -39,11 +40,17 @@ jobs:
       - run: cargo test --manifest-path src-tauri/Cargo.toml
 
   build:
-    if: startsWith(github.ref, 'refs/tags/v')
+    # Build on push to main/master or tags, not on PRs (PRs already run lint/test)
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     needs: [lint-and-typecheck, test]
     runs-on: windows-latest
+    outputs:
+      version: ${{ steps.manifest_version.outputs.version }}
+      tag: ${{ steps.manifest_version.outputs.tag }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
@@ -53,8 +60,30 @@ jobs:
       - run: npm run build
       - name: Install Tauri CLI
         run: cargo install tauri-cli --version "^2.0"
+      - name: Resolve version
+        id: manifest_version
+        shell: pwsh
+        run: |
+          if ("${{ github.ref }}" -like "refs/tags/v*") {
+            $tag = "${{ github.ref_name }}"
+            $version = $tag.TrimStart("v")
+          } else {
+            $pkg = Get-Content package.json -Raw | ConvertFrom-Json
+            $version = $pkg.version
+            $tag = "v$version"
+          }
+          Write-Host "Version: $version Tag: $tag"
+          "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "tag=$tag" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
       - name: Build MSI (signed)
-        run: cargo tauri build --bundles msi
+        shell: pwsh
+        run: |
+          # Ensure signing keys are available under both naming conventions
+          if ($env:TAURI_SIGNING_PRIVATE_KEY -and -not $env:TAURI_PRIVATE_KEY) { $env:TAURI_PRIVATE_KEY = $env:TAURI_SIGNING_PRIVATE_KEY }
+          if ($env:TAURI_PRIVATE_KEY -and -not $env:TAURI_SIGNING_PRIVATE_KEY) { $env:TAURI_SIGNING_PRIVATE_KEY = $env:TAURI_PRIVATE_KEY }
+          if ($env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD -and -not $env:TAURI_KEY_PASSWORD) { $env:TAURI_KEY_PASSWORD = $env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD }
+          if ($env:TAURI_KEY_PASSWORD -and -not $env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD) { $env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD = $env:TAURI_KEY_PASSWORD }
+          cargo tauri build --bundles msi
         working-directory: src-tauri
         env:
           TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
@@ -66,14 +95,14 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force -Path staging
           $msiDir = "src-tauri\target\release\bundle\msi"
-          Copy-Item "$msiDir\*.msi" staging\
+          Copy-Item "$msiDir\*.msi" staging\ -ErrorAction SilentlyContinue
           $msiFile = Get-ChildItem "$msiDir\*.msi" | Select-Object -First 1
           if (-not $msiFile) { Write-Error "MSI not found in $msiDir"; exit 1 }
           $sigFile = Get-ChildItem "$msiDir\*.msi.sig" | Select-Object -First 1
+          $version = "${{ steps.manifest_version.outputs.version }}"
+          $tag = "${{ steps.manifest_version.outputs.tag }}"
           if ($sigFile) {
             Copy-Item $sigFile.FullName staging\
-            $tag = "${{ github.ref_name }}"
-            $version = $tag.TrimStart("v")
             $sig = Get-Content $sigFile.FullName -Raw
             $name = $msiFile.Name
             $manifest = @{
@@ -92,6 +121,20 @@ jobs:
             Get-Content "staging\update.json" | Write-Host
           } else {
             Write-Host "No signature file found (unsigned build) - skipping updater manifest"
+            # Still create a minimal update.json for artifact completeness (without signature)
+            $name = $msiFile.Name
+            $manifest = @{
+              version   = $version
+              notes     = "See $tag release notes for details."
+              pub_date  = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+              platforms = @{
+                "windows-x86_64" = @{
+                  signature = ""
+                  url       = "https://github.com/${{ github.repository }}/releases/download/$tag/$([System.Uri]::EscapeDataString($name))"
+                }
+              }
+            }
+            $manifest | ConvertTo-Json -Depth 10 | Set-Content "staging\update.json"
           }
       - name: Upload artifacts
         uses: actions/upload-artifact@v6
@@ -100,7 +143,7 @@ jobs:
           path: staging/*
 
   release:
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v')) || github.event_name == 'workflow_dispatch'
     needs: [build]
     runs-on: ubuntu-latest
     permissions:
@@ -109,19 +152,73 @@ jobs:
       - uses: actions/download-artifact@v7
         with:
           name: opencode-monitor-release
+      - name: Resolve version for release
+        id: rel_version
+        shell: bash
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            TAG="${{ github.ref_name }}"
+            VERSION="${TAG#v}"
+          else
+            # For push to main, read version from update.json (generated in build)
+            if [ -f update.json ]; then
+              VERSION=$(jq -r .version update.json)
+              TAG="v$VERSION"
+            else
+              MSI=$(ls *.msi 2>/dev/null | head -1)
+              if [ -n "$MSI" ]; then
+                VERSION=$(echo "$MSI" | grep -oP '\d+\.\d+\.\d+' | head -1)
+                TAG="v$VERSION"
+              else
+                echo "No MSI or update.json found"
+                exit 1
+              fi
+            fi
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "Resolved version $VERSION tag $TAG"
+      - name: Check if release already exists
+        id: check_release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ steps.rel_version.outputs.tag }}"
+          if gh release view "$TAG" --repo "${{ github.repository }}" >/dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "Release $TAG already exists — will update assets"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "Release $TAG does not exist — will create new release"
+          fi
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v3
         with:
+          tag_name: ${{ steps.rel_version.outputs.tag }}
+          name: ${{ steps.rel_version.outputs.tag }}
           files: |-
             *.msi
             *.msi.sig
             update.json
           fail_on_unmatched_files: false
           generate_release_notes: true
+          draft: false
+          prerelease: false
       - name: Sync update.json to main branch (for old clients using raw.githubusercontent endpoint)
+        if: steps.check_release.outputs.exists == 'false'
         shell: bash
         run: |
           if [ ! -f update.json ]; then echo "No update.json to sync — skipping"; exit 0; fi
+          # Only sync when release was newly created from a push to main (not from a tag push, to avoid double-commit)
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            echo "Tag push — main already contains the version bump, syncing anyway for safety"
+          fi
+          # Check if we should skip [skip ci] commits (avoid infinite loop)
+          if [[ "${{ github.event.head_commit.message }}" == *"[skip ci]"* ]]; then
+            echo "Commit already has [skip ci] — skipping sync"
+            exit 0
+          fi
           echo "Syncing update.json to main branch..."
           git clone --depth 1 --branch main https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git ../main-branch
           cp -v update.json ../main-branch/update.json
@@ -130,6 +227,6 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           if git diff --quiet update.json; then echo "No changes to update.json"; exit 0; fi
           git add update.json
-          git commit -m "chore: update update.json for ${{ github.ref_name }} [skip ci]"
+          git commit -m "chore: update update.json for ${{ steps.rel_version.outputs.tag }} [skip ci]"
           git push origin main
           echo "update.json synced to main"
