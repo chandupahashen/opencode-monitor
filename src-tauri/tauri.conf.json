@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/nicedoc/open-code/refs/heads/main/schemas/json/tauri-conf.schema.json",
   "productName": "OpenCode-Monitor",
-  "version": "1.5.2",
+  "version": "1.5.3",
   "identifier": "com.opencode.monitor",
   "build": {
     "frontendDist": "../dist",
