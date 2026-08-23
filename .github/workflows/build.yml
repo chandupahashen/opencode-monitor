@@ -205,28 +205,43 @@ jobs:
           generate_release_notes: true
           draft: false
           prerelease: false
-      - name: Sync update.json to main branch (for old clients using raw.githubusercontent endpoint)
+      - name: Sync update.json to default branch (for old clients using raw.githubusercontent endpoint)
         if: steps.check_release.outputs.exists == 'false'
         shell: bash
         run: |
           if [ ! -f update.json ]; then echo "No update.json to sync — skipping"; exit 0; fi
           # Only sync when release was newly created from a push to main (not from a tag push, to avoid double-commit)
           if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
-            echo "Tag push — main already contains the version bump, syncing anyway for safety"
+            echo "Tag push — default branch already contains the version bump, syncing anyway for safety"
           fi
           # Check if we should skip [skip ci] commits (avoid infinite loop)
           if [[ "${{ github.event.head_commit.message }}" == *"[skip ci]"* ]]; then
             echo "Commit already has [skip ci] — skipping sync"
             exit 0
           fi
-          echo "Syncing update.json to main branch..."
-          git clone --depth 1 --branch main https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git ../main-branch
-          cp -v update.json ../main-branch/update.json
+          echo "Syncing update.json to default branch..."
+          # Clone default branch without hardcoding main/master
+          git clone --depth 1 https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git ../main-branch
           cd ../main-branch
+          # Detect default branch (handles both main and master)
+          DEFAULT_BRANCH=$(git remote show origin | sed -n '/HEAD branch/s/.*: //p')
+          if [ -z "$DEFAULT_BRANCH" ]; then
+            DEFAULT_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@')
+          fi
+          if [ -z "$DEFAULT_BRANCH" ]; then
+            if git ls-remote --heads origin main | grep -q main; then DEFAULT_BRANCH=main
+            elif git ls-remote --heads origin master | grep -q master; then DEFAULT_BRANCH=master
+            else DEFAULT_BRANCH=main
+            fi
+          fi
+          echo "Default branch is $DEFAULT_BRANCH"
+          git checkout "$DEFAULT_BRANCH"
+          # Copy the freshly generated update.json (from the release job workspace) into the cloned repo
+          cp -v "$GITHUB_WORKSPACE/update.json" ./update.json
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           if git diff --quiet update.json; then echo "No changes to update.json"; exit 0; fi
           git add update.json
           git commit -m "chore: update update.json for ${{ steps.rel_version.outputs.tag }} [skip ci]"
-          git push origin main
-          echo "update.json synced to main"
+          git push origin "$DEFAULT_BRANCH"
+          echo "update.json synced to $DEFAULT_BRANCH"
