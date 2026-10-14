@@ -60,7 +60,8 @@ export function Sessions() {
         s.id.toLowerCase().includes(q) ||
         (s.title?.toLowerCase().includes(q) ?? false) ||
         (s.model?.toLowerCase().includes(q) ?? false) ||
-        (s.project_id?.toLowerCase().includes(q) ?? false)
+        (s.project_id?.toLowerCase().includes(q) ?? false) ||
+        (s.slug?.toLowerCase().includes(q) ?? false)
       );
     })
     .sort((a, b) => {
@@ -125,6 +126,8 @@ export function Sessions() {
       time_archived: detail.time_archived ? new Date(detail.time_archived).toISOString() : null,
       directory: detail.directory,
       project_id: detail.project_id,
+      slug: detail.slug ?? null,
+      parent_id: detail.parent_id ?? null,
       messages: detail.messages,
     };
   }
@@ -332,14 +335,33 @@ export function Sessions() {
                       </div>
                     )}
 
+                    {(detail.slug || detail.parent_id) && (
+                      <div className="border-t border-border pt-3">
+                        <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Session</div>
+                        <div className="flex flex-wrap gap-2 text-xs">
+                          {detail.slug && (
+                            <span className="px-2 py-0.5 rounded-full bg-surface-700/60 text-gray-300 font-mono">slug: {detail.slug}</span>
+                          )}
+                          {detail.parent_id && (
+                            <span className="px-2 py-0.5 rounded-full bg-surface-700/60 text-gray-400 font-mono" title={detail.parent_id}>
+                              fork of {detail.parent_id.slice(0, 14)}…
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
                     {detail.messages.length > 0 && (
                       <div className="border-t border-border pt-3">
                         <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-2">Messages ({detail.messages.length})</div>
                         <div className="space-y-1">
                           {detail.messages.slice(0, 10).map((m) => (
-                            <div key={m.id} className="bg-surface-700/30 rounded px-2 py-1.5 flex items-center justify-between text-xs">
-                              <span className="text-gray-400 font-mono truncate max-w-[200px]">{m.id.slice(0, 20)}…</span>
-                              <span className="text-gray-600">{m.parts_count} parts</span>
+                            <div key={m.id} className="bg-surface-700/30 rounded px-2 py-1.5 flex items-center justify-between text-xs gap-2">
+                              <span className="text-gray-400 font-mono truncate max-w-[140px]">{m.id.slice(0, 20)}…</span>
+                              {m.message_type && (
+                                <span className="px-1.5 py-0.5 rounded text-[10px] bg-accent/10 text-accent border border-accent/20 flex-shrink-0">{m.message_type}</span>
+                              )}
+                              <span className="text-gray-600 flex-shrink-0">{m.parts_count} parts</span>
                             </div>
                           ))}
                           {detail.messages.length > 10 && (

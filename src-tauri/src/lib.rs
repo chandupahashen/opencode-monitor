@@ -49,6 +49,7 @@ pub fn run() {
             commands::get_cost_breakdown,
             commands::get_models_list,
             commands::get_projects_list,
+            commands::get_db_info,
             commands::set_db_path,
             commands::set_refresh_interval,
             commands::get_settings,

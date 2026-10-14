@@ -27,6 +27,8 @@ export interface SessionRow {
   time_created: number;
   time_updated: number;
   project_id: string | null;
+  slug?: string | null;
+  parent_id?: string | null;
 }
 
 export interface SessionDetail {
@@ -48,6 +50,8 @@ export interface SessionDetail {
   time_archived: number | null;
   directory: string | null;
   project_id: string | null;
+  slug?: string | null;
+  parent_id?: string | null;
   messages: MessageInfo[];
 }
 
@@ -55,6 +59,7 @@ export interface MessageInfo {
   id: string;
   time_created: number;
   parts_count: number;
+  message_type?: string;
 }
 
 export interface TokenTrend {
@@ -106,4 +111,19 @@ export interface HealthStatus {
   uptime: string;
   db_connected: boolean;
   db_path: string | null;
+  schema?: string;
+}
+
+export interface DbInfo {
+  path: string | null;
+  exists: boolean;
+  schema: string;
+  session_table: string | null;
+  has_session_v2: boolean;
+  has_legacy_session: boolean;
+  has_session_message: boolean;
+  has_message: boolean;
+  has_part: boolean;
+  session_count: number;
+  message_count: number;
 }

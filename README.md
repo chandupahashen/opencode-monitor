@@ -8,7 +8,7 @@
 
 A desktop dashboard for monitoring and analyzing your [opencode](https://opencode.ai) AI assistant usage. Built with Tauri v2, React, Rust, and SQLite.
 
-> **New in 1.5.x:** JSON model extraction, `project` JOIN, live `message`/`part` counts, dual-endpoint auto-updater with `process` relaunch, and signed MSI releases via GitHub Actions.
+> **New in 1.6.0:** Full **opencode v2** support — reads `session_v2` / `session_message` (with `session` / `message` / `part` fallback for v1), `OPENCODE_DB` override, `provider/model#variant` model refs, and fork `slug` / `parent_id` display.
 
 ## Features
 
@@ -52,14 +52,22 @@ npm run tauri dev
 
 ## Database
 
-OpenCode Monitor reads from the `opencode.db` SQLite database created by the OpenCode CLI. By default it looks in:
+OpenCode Monitor reads from the `opencode.db` SQLite database created by the OpenCode CLI. Detection order:
 
-- **Windows:** `%APPDATA%/opencode/opencode.db`
-- **Linux/macOS:** `~/.local/share/opencode/opencode.db`
+1. `OPENCODE_DB` env var (v2 documented override)
+2. `~/.local/share/opencode/opencode.db` (`$XDG_DATA_HOME` respected)
+3. `%USERPROFILE%/.local/share/opencode/opencode.db` (Windows v2 location)
+4. `%APPDATA%/opencode/opencode.db` and `%LOCALAPPDATA%/opencode/opencode.db` (legacy)
 
 You can override the path in Settings.
 
-The app tolerates both legacy (plain `model` string) and current (JSON `{"id":"...","providerID":"opencode","variant":"max"}`) schemas, and survives a locked DB via `busy_timeout(3s)`.
+Schema support:
+
+- **opencode v2** — `session_v2` (with `slug`, `parent_id`/`fork_session_id`, `directory`, token/cost columns) + `session_message` (`type`/`seq`/`data` JSON, ordered by `seq`). Message `parts_count` is derived from `json_array_length(data, '$.content')`.
+- **opencode v1 fallback** — legacy `session` + `message`/`part` tables still work when `session_v2` is absent.
+- **Models** — JSON `{"id":"...","providerID":"opencode","variant":"xhigh"}` plus string refs `provider/model#variant` and `model#variant` (variant stripped for grouping, shown in the UI).
+- **Projects** — `project.worktree` + `name` (nullable in v2, falls back to worktree basename); date filters are `s.time_created`-qualified to avoid ambiguity with `project.time_created`.
+- The app survives a locked DB via `busy_timeout(3s)` and creates its helper indexes best-effort.
 
 ## Contributing
 

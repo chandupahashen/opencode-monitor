@@ -5,6 +5,7 @@ import { useMemo } from "react";
 import { decodeModel } from "../utils/model";
 import { formatCost, formatTokens } from "../utils/format";
 import { DateFilter } from "../components/DateFilter";
+import { TokenActivity } from "../components/TokenActivity";
 import { SkeletonCard, SkeletonKPI, Skeleton } from "../components/Skeleton";
 
 const COLORS = ["#22d3ee", "#fbbf24", "#34d399", "#a78bfa", "#fb7185", "#f472b6", "#2dd4bf", "#fb923c"];
@@ -88,6 +89,8 @@ export function Dashboard() {
           );
         })}
       </div>
+
+      <TokenActivity />
 
       <div className="grid grid-cols-2 gap-5">
         <div className="glass-card rounded-xl p-5">

@@ -28,15 +28,50 @@ export function decodeModel(raw: string | null): DecodedModel {
   try {
     const parsed = JSON.parse(id);
     if (parsed && typeof parsed === "object") {
-      id = parsed.id ?? id;
+      id = parsed.id ?? parsed.modelID ?? parsed.modelId ?? id;
       provider = parsed.providerID ?? "";
       variant = parsed.variant ?? null;
     }
   } catch {
+    // v2 string ref: provider/model#variant (e.g. opencode/muse-spark-1.3#xhigh)
+    // or bare model#variant. Strip #variant first so grouping collapses variants.
+    const hashIdx = id.indexOf("#");
+    if (hashIdx > 0) {
+      const v = id.slice(hashIdx + 1);
+      if (v) variant = variant ?? v;
+      id = id.slice(0, hashIdx);
+    }
     const slashIdx = id.indexOf("/");
     if (slashIdx > 0) {
       provider = id.slice(0, slashIdx);
       id = id.slice(slashIdx + 1);
+      // Handle nested provider prefix after first split (defensive).
+      const hash2 = id.indexOf("#");
+      if (hash2 > 0) {
+        if (!variant) variant = id.slice(hash2 + 1) || null;
+        id = id.slice(0, hash2);
+      }
+    } else {
+      // No slash: still strip any trailing #variant missed above (e.g. id contained JSON-ish chars).
+      const h = id.indexOf("#");
+      if (h > 0) {
+        if (!variant) variant = id.slice(h + 1) || null;
+        id = id.slice(0, h);
+      }
+    }
+  }
+
+  // JSON ids may themselves carry provider/ or #variant (e.g. {"id":"opencode/foo#xhigh"}).
+  if (id.includes("#")) {
+    const h = id.indexOf("#");
+    if (!variant) variant = id.slice(h + 1) || null;
+    id = id.slice(0, h);
+  }
+  if (id.includes("/") && !provider) {
+    const si = id.indexOf("/");
+    if (si > 0 && !id.slice(0, si).includes(" ") && !id.slice(0, si).includes("{")) {
+      provider = id.slice(0, si);
+      id = id.slice(si + 1);
     }
   }
 

@@ -163,17 +163,31 @@ pub fn get_settings(state: State<AppState>) -> Result<AppSettings, String> {
 
 #[tauri::command]
 #[instrument(skip(state))]
-pub fn health_check(state: State<AppState>) -> Result<HealthStatus, String> {
+pub fn get_db_info(state: State<AppState>) -> Result<DbInfo, String> {
     let path = state.get_db_path();
+    db::get_db_info(path.as_deref())
+}
+
+#[tauri::command]
+#[instrument(skip(state))]
+pub fn health_check(state: State<AppState>) -> Result<HealthStatus, String> {
+    let custom = state.get_db_path();
     let uptime = format!("{}s", START_TIME.elapsed().as_secs());
-    let db_ok = path.as_deref().is_some_and(|p| {
+    // Resolve custom > OPENCODE_DB > auto-detect so health reflects the real file in use.
+    let resolved = db::resolved_path_string(custom.as_deref());
+    let db_ok = resolved.as_deref().is_some_and(|p| {
         std::path::Path::new(p).exists() && db::verify_connection(p)
     });
+    // Best-effort schema label (v2/v1/unknown) without failing health when DB is missing.
+    let schema = db::get_db_info(custom.as_deref())
+        .map(|i| i.schema)
+        .unwrap_or_else(|_| "unknown".to_string());
 
     Ok(HealthStatus {
         version: env!("CARGO_PKG_VERSION").to_string(),
         uptime,
         db_connected: db_ok,
-        db_path: path,
+        db_path: resolved.or(custom),
+        schema,
     })
 }

@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-10-14
+
+### Added
+- **opencode v2 support** — auto-detect `session_v2` (preferred) with `session` fallback for v1; `session_message` (`type`/`seq`/`data`) with `message`/`part` fallback; new `get_db_info` command (`schema`, `session_table`, counts) surfaced in Settings + `health_check.schema`
+- **Session forks** — `SessionRow`/`SessionDetail` gain `slug` + `parent_id`; Sessions detail shows slug badge + fork parent, search includes slug
+- **Message types** — `MessageInfo.message_type` from `session_message.type` (assistant/user/system/synthetic/idle/...) shown as badge; `parts_count` via `json_array_length(data,'$.content')`
+- **DB resolution** — `OPENCODE_DB` env override, `XDG_DATA_HOME`, `%USERPROFILE%/.local/share` (actual Windows v2 location) + `dirs::data_dir()`; `health_check` now returns the resolved path even when no custom path is set
+- **Tests** — `models.rs` unit tests for JSON vs `provider/model#variant` extraction, variant parsing, worktree basename
+
+### Changed
+- **Model refs** — `extract_model_id`/`decodeModel` strip `#variant` (`opencode/foo#xhigh` → `foo`, variant kept for display) and handle `modelID`/`modelId` keys; `get_model_usage` collapses string-ref variants in Rust post-aggregation
+- **Project stats** — date filter qualified as `s.time_created` (v2 `project` also has `time_created`), `project.name`/`worktree` column-existence guards
+- **Migrations** — `SCHEMA_VERSION=3` with best-effort `session_v2`/`session_message` indexes; `user_version` bump preserves opencode's own higher value via `max()`
+- Version bump `1.5.5` → `1.6.0` (`package.json`/`Cargo.toml`/`tauri.conf.json`/`Cargo.lock`)
+
 ## [1.5.5] - 2026-08-23
 
 ### Added

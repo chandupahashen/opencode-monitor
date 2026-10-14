@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useStore } from "../store/useStore";
-import type { Overview, SessionRow, SessionDetail, TokenTrend, ModelStat, ProjectStat, DayActivity, CostBreakdown, HealthStatus } from "../types";
+import type { Overview, SessionRow, SessionDetail, TokenTrend, ModelStat, ProjectStat, DayActivity, CostBreakdown, HealthStatus, DbInfo } from "../types";
 
 export function useDb() {
   async function fetchOverview(opts?: { dateFrom?: number; dateTo?: number }): Promise<Overview> {
@@ -60,6 +60,10 @@ export function useDb() {
 
   async function fetchHealthStatus(): Promise<HealthStatus> {
     return invoke<HealthStatus>("health_check");
+  }
+
+  async function fetchDbInfo(): Promise<DbInfo> {
+    return invoke<DbInfo>("get_db_info");
   }
 
   async function setDbPath(path: string): Promise<void> {
@@ -123,6 +127,7 @@ export function useDb() {
     fetchModelsList,
     fetchProjectsList,
     fetchHealthStatus,
+    fetchDbInfo,
     setDbPath,
     setRefreshInterval,
     refreshAll,

@@ -5,7 +5,7 @@ import { Save, Database, RefreshCw, Palette, Info, DownloadCloud, RotateCcw } fr
 import { check } from "@tauri-apps/plugin-updater";
 import type { Update } from "@tauri-apps/plugin-updater";
 import { relaunch } from "@tauri-apps/plugin-process";
-import type { HealthStatus } from "../types";
+import type { HealthStatus, DbInfo } from "../types";
 
 function Section({ icon: Icon, title, desc, children }: { icon: React.ElementType; title: string; desc?: string; children: React.ReactNode }) {
   return (
@@ -28,10 +28,11 @@ export function Settings() {
   const theme = useStore((s) => s.theme);
   const setTheme = useStore((s) => s.setTheme);
   const error = useStore((s) => s.error);
-  const { refreshAll, setDbPath: setPath, setRefreshInterval: setInterval, fetchHealthStatus } = useDb();
+  const { refreshAll, setDbPath: setPath, setRefreshInterval: setInterval, fetchHealthStatus, fetchDbInfo } = useDb();
   const [dbPath, setDbPath] = useState("");
   const [saved, setSaved] = useState(false);
   const [health, setHealth] = useState<HealthStatus | null>(null);
+  const [dbInfo, setDbInfo] = useState<DbInfo | null>(null);
   const [updateState, setUpdateState] = useState<{
     status: "idle" | "checking" | "available" | "downloading" | "ready" | "uptodate" | "error";
     version?: string;
@@ -43,7 +44,8 @@ export function Settings() {
 
   useEffect(() => {
     fetchHealthStatus().then(setHealth).catch(() => {});
-  }, [fetchHealthStatus]);
+    fetchDbInfo().then(setDbInfo).catch(() => {});
+  }, [fetchHealthStatus, fetchDbInfo]);
 
   async function handleSaveDbPath() {
     if (!dbPath.trim()) return;
@@ -131,10 +133,14 @@ export function Settings() {
     <div className="space-y-5 max-w-2xl animate-slide-in">
       <h2 className="text-lg font-bold">Settings</h2>
 
-      <Section icon={Database} title="Database Path" desc="Leave empty for auto-detect">
+      <Section icon={Database} title="Database Path" desc="Leave empty for auto-detect (opencode v2 supported)">
         <p className="text-xs text-gray-500 mb-3 leading-relaxed">
-          The app searches <span className="text-accent font-mono text-[11px] bg-surface-700/50 px-1 py-0.5 rounded">~/.local/share/opencode/opencode.db</span>{" "}
-          and <span className="text-accent font-mono text-[11px] bg-surface-700/50 px-1 py-0.5 rounded">%APPDATA%/opencode/opencode.db</span>.
+          Auto-detect order: <span className="text-accent font-mono text-[11px] bg-surface-700/50 px-1 py-0.5 rounded">OPENCODE_DB</span>{" "}
+          → <span className="text-accent font-mono text-[11px] bg-surface-700/50 px-1 py-0.5 rounded">~/.local/share/opencode/opencode.db</span>{" "}
+          → <span className="text-accent font-mono text-[11px] bg-surface-700/50 px-1 py-0.5 rounded">%USERPROFILE%/.local/share/opencode/opencode.db</span>{" "}
+          → <span className="text-accent font-mono text-[11px] bg-surface-700/50 px-1 py-0.5 rounded">%APPDATA%/opencode/opencode.db</span>.
+          Reads <span className="text-gray-300 font-mono text-[11px]">session_v2 / session_message</span> on v2, falls back to{" "}
+          <span className="text-gray-300 font-mono text-[11px]">session / message / part</span> on v1.
         </p>
         <div className="flex gap-2">
           <input
@@ -154,6 +160,27 @@ export function Settings() {
         </div>
         {error && error.includes("database") && (
           <p className="text-xs text-red-accent mt-2">Current path not accessible: {error}</p>
+        )}
+        {(health?.db_path || dbInfo?.path) && (
+          <div className="mt-3 pt-3 border-t border-border space-y-1">
+            <p className="text-xs text-gray-500 break-all">
+              Resolved: <span className="text-gray-300 font-mono">{health?.db_path ?? dbInfo?.path}</span>
+            </p>
+            {(dbInfo || health?.schema) && (
+              <p className="text-xs text-gray-500">
+                Schema:{" "}
+                <span className="text-accent font-mono">
+                  {dbInfo?.schema ?? health?.schema ?? "—"}
+                </span>
+                {dbInfo?.session_table && (
+                  <span className="text-gray-500"> ({dbInfo.session_table})</span>
+                )}
+                {typeof dbInfo?.session_count === "number" && (
+                  <span className="text-gray-500"> — {dbInfo.session_count} sessions / {dbInfo.message_count} messages</span>
+                )}
+              </p>
+            )}
+          </div>
         )}
       </Section>
 
@@ -298,7 +325,11 @@ export function Settings() {
               <p className="text-xs text-gray-500">Uptime: {health.uptime}</p>
               <p className="text-xs text-gray-500">
                 Database: {health.db_connected ? <span className="text-green-accent">Connected</span> : <span className="text-red-accent">Disconnected</span>}
+                {health.schema && <span className="text-gray-600"> ({health.schema})</span>}
               </p>
+              {health.db_path && (
+                <p className="text-[11px] text-gray-600 font-mono break-all">{health.db_path}</p>
+              )}
             </div>
           )}
         </div>
