@@ -8,7 +8,7 @@ import { DateFilter } from "../components/DateFilter";
 import { TokenActivity } from "../components/TokenActivity";
 import { SkeletonCard, SkeletonKPI, Skeleton } from "../components/Skeleton";
 
-const COLORS = ["#22d3ee", "#fbbf24", "#34d399", "#a78bfa", "#fb7185", "#f472b6", "#2dd4bf", "#fb923c"];
+const COLORS = ["#fab283", "#9d7cd8", "#5c9cf5", "#34d399", "#fbbf24", "#fb7185", "#f472b6", "#fb923c"];
 
 const kpiConfig = [
   { label: "Total Sessions", key: "total_sessions" as const, icon: Activity, color: "text-accent", bg: "from-accent/10 to-transparent" },
@@ -63,7 +63,7 @@ export function Dashboard() {
     total: t.tokens_input + t.tokens_output + t.tokens_reasoning,
   }));
 
-  const tooltipStyle = { background: "#1a1a25", border: "1px solid #2a2a3e", borderRadius: 8, fontSize: 12, boxShadow: "0 4px 20px rgba(0,0,0,0.4)" };
+  const tooltipStyle = { background: "#141419", border: "1px solid #2f2f3a", borderRadius: 8, fontSize: 12, boxShadow: "0 4px 20px rgba(0,0,0,0.4)" };
 
   return (
     <div className="space-y-6 animate-slide-in">
@@ -102,14 +102,14 @@ export function Dashboard() {
             <AreaChart data={trendData}>
               <defs>
                 <linearGradient id="inputGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#22d3ee" stopOpacity={0.25} />
-                  <stop offset="100%" stopColor="#22d3ee" stopOpacity={0} />
+                  <stop offset="0%" stopColor="#fab283" stopOpacity={0.25} />
+                  <stop offset="100%" stopColor="#fab283" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#6b7280" }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 10, fill: "#6b7280" }} tickFormatter={formatTokens} axisLine={false} tickLine={false} />
               <Tooltip contentStyle={tooltipStyle} formatter={(value: unknown) => [formatTokens(Number(value)), "Total"]} />
-              <Area type="monotone" dataKey="total" stroke="#22d3ee" fill="url(#inputGrad)" strokeWidth={2.5} dot={false} />
+              <Area type="monotone" dataKey="total" stroke="#fab283" fill="url(#inputGrad)" strokeWidth={2.5} dot={false} />
             </AreaChart>
           </ResponsiveContainer>
         </div>

@@ -5,6 +5,7 @@ import { useAutoRefresh } from "../hooks/useAutoRefresh";
 import { useDb } from "../hooks/useDb";
 import { Titlebar } from "./Titlebar";
 import { AppLoader } from "./Skeleton";
+import { formatCost, formatTokens } from "../utils/format";
 
 const tabs = [
   { id: "dashboard", label: "Dashboard", icon: Activity, desc: "Overview & KPIs" },
@@ -48,7 +49,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <div className="flex flex-1 min-h-0">
         <aside className="w-58 flex-shrink-0 flex flex-col border-r border-border bg-surface-800 relative z-10">
           <div className="flex items-center gap-3 px-4 h-12 border-b border-border">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-accent to-cyan-600 flex items-center justify-center flex-shrink-0">
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-accent to-accent-dim flex items-center justify-center flex-shrink-0">
               <Terminal className="w-3.5 h-3.5 text-white" />
             </div>
             <div className="min-w-0">
@@ -109,7 +110,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
         <main className="flex-1 flex flex-col min-w-0">
           <header className="h-10 flex items-center justify-between px-5 border-b border-border bg-surface-800">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-accent">❯</span>
               <h2 className="text-xs font-semibold text-gray-300">{currentTabMeta?.label}</h2>
               <span className="text-[10px] text-gray-600 hidden sm:inline">{currentTabMeta?.desc}</span>
             </div>
@@ -135,6 +137,31 @@ export function Layout({ children }: { children: React.ReactNode }) {
           )}
 
           <div className="flex-1 overflow-auto p-5">{children}</div>
+
+          <footer className="h-7 flex items-center gap-4 px-4 border-t border-border bg-surface-800 text-[10px] text-gray-500 flex-shrink-0">
+            <span className="text-accent">❯</span>
+            <span className="text-gray-400">opencode-monitor</span>
+            {overview && (
+              <>
+                <span>{overview.total_sessions} sessions</span>
+                <span className="hidden sm:inline">{overview.active_sessions} active</span>
+                <span className="hidden md:inline">
+                  {formatTokens(overview.total_tokens_input + overview.total_tokens_output)} tok
+                </span>
+                <span className="hidden md:inline text-green-accent">{formatCost(overview.total_cost)}</span>
+              </>
+            )}
+            <span className="ml-auto flex items-center gap-3">
+              <span className="hidden sm:inline">auto {refreshInterval}s</span>
+              {error ? (
+                <span className="text-red-accent">● db disconnected</span>
+              ) : overview ? (
+                <span className="text-green-accent">● db connected</span>
+              ) : (
+                <span className="text-yellow-accent">● db …</span>
+              )}
+            </span>
+          </footer>
         </main>
       </div>
     </div>

@@ -8,7 +8,7 @@ import { formatCost, formatTokens } from "../utils/format";
 import { DateFilter } from "../components/DateFilter";
 import { SkeletonCard, Skeleton } from "../components/Skeleton";
 
-const tooltipStyle = { background: "#1a1a25", border: "1px solid #2a2a3e", borderRadius: 8, fontSize: 12, boxShadow: "0 4px 20px rgba(0,0,0,0.4)" };
+const tooltipStyle = { background: "#141419", border: "1px solid #2f2f3a", borderRadius: 8, fontSize: 12, boxShadow: "0 4px 20px rgba(0,0,0,0.4)" };
 
 export function Analytics() {
   const tokenTrends = useStore((s) => s.tokenTrends);
@@ -57,16 +57,16 @@ export function Analytics() {
         </h3>
         <ResponsiveContainer width="100%" height={300}>
           <AreaChart data={stackedTrend}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#2a2a3e" strokeOpacity={0.5} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#2f2f3a" strokeOpacity={0.5} />
             <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#6b7280" }} axisLine={false} tickLine={false} />
             <YAxis tick={{ fontSize: 10, fill: "#6b7280" }} tickFormatter={formatTokens} axisLine={false} tickLine={false} />
                           <Tooltip contentStyle={tooltipStyle} formatter={(value: unknown, name: unknown) => [formatTokens(Number(value)), String(name)]} />
             <Legend wrapperStyle={{ fontSize: 11, paddingTop: 8 }} />
-            <Area type="monotone" dataKey="input" stackId="1" stroke="#22d3ee" fill="#22d3ee" fillOpacity={0.4} strokeWidth={1.5} />
+            <Area type="monotone" dataKey="input" stackId="1" stroke="#fab283" fill="#fab283" fillOpacity={0.4} strokeWidth={1.5} />
             <Area type="monotone" dataKey="output" stackId="1" stroke="#34d399" fill="#34d399" fillOpacity={0.4} strokeWidth={1.5} />
             <Area type="monotone" dataKey="reasoning" stackId="1" stroke="#fbbf24" fill="#fbbf24" fillOpacity={0.4} strokeWidth={1.5} />
-            <Area type="monotone" dataKey="cache_read" stackId="1" stroke="#a78bfa" fill="#a78bfa" fillOpacity={0.4} strokeWidth={1.5} />
-            <Area type="monotone" dataKey="cache_write" stackId="1" stroke="#f472b6" fill="#f472b6" fillOpacity={0.4} strokeWidth={1.5} />
+            <Area type="monotone" dataKey="cache_read" stackId="1" stroke="#9d7cd8" fill="#9d7cd8" fillOpacity={0.4} strokeWidth={1.5} />
+            <Area type="monotone" dataKey="cache_write" stackId="1" stroke="#5c9cf5" fill="#5c9cf5" fillOpacity={0.4} strokeWidth={1.5} />
           </AreaChart>
         </ResponsiveContainer>
       </div>
@@ -79,7 +79,7 @@ export function Analytics() {
           </h3>
           <ResponsiveContainer width="100%" height={250}>
             <LineChart data={stackedTrend}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#2a2a3e" strokeOpacity={0.5} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#2f2f3a" strokeOpacity={0.5} />
               <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#6b7280" }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 10, fill: "#6b7280" }} tickFormatter={formatCost} axisLine={false} tickLine={false} />
               <Tooltip contentStyle={tooltipStyle} formatter={(value: unknown, name: unknown) => [formatCost(Number(value)), String(name)]} />
@@ -95,11 +95,11 @@ export function Analytics() {
           </h3>
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={modelUsage.slice(0, 10)}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#2a2a3e" strokeOpacity={0.5} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#2f2f3a" strokeOpacity={0.5} />
               <XAxis dataKey="model" tick={{ fontSize: 9, fill: "#6b7280" }} tickFormatter={(v: string) => decodeModel(v).short} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 10, fill: "#6b7280" }} tickFormatter={formatTokens} axisLine={false} tickLine={false} />
               <Tooltip contentStyle={tooltipStyle} formatter={(value: unknown, name: unknown) => [formatTokens(Number(value)), String(name)]} />
-              <Bar dataKey="total_tokens" fill="#22d3ee" radius={[4, 4, 0, 0]} maxBarSize={40} />
+              <Bar dataKey="total_tokens" fill="#fab283" radius={[4, 4, 0, 0]} maxBarSize={40} />
             </BarChart>
           </ResponsiveContainer>
         </div>

@@ -6,7 +6,7 @@ import { SkeletonCard, Skeleton } from "../components/Skeleton";
 import { projectDir } from "../utils/project";
 import { formatCost, formatTokens } from "../utils/format";
 
-const tooltipStyle = { background: "#1a1a25", border: "1px solid #2a2a3e", borderRadius: 8, fontSize: 12, boxShadow: "0 4px 20px rgba(0,0,0,0.4)" };
+const tooltipStyle = { background: "#141419", border: "1px solid #2f2f3a", borderRadius: 8, fontSize: 12, boxShadow: "0 4px 20px rgba(0,0,0,0.4)" };
 
 export function Projects() {
   const projectStats = useStore((s) => s.projectStats);
@@ -88,7 +88,7 @@ export function Projects() {
             <XAxis dataKey="name" tick={{ fontSize: 10, fill: "#6b7280" }} axisLine={false} tickLine={false} />
             <YAxis tick={{ fontSize: 10, fill: "#6b7280" }} tickFormatter={formatTokens} axisLine={false} tickLine={false} />
             <Tooltip contentStyle={tooltipStyle} formatter={(value: unknown) => [formatTokens(Number(value)), "Tokens"]} />
-            <Bar dataKey="tokens" fill="#22d3ee" radius={[4, 4, 0, 0]} maxBarSize={50} />
+            <Bar dataKey="tokens" fill="#fab283" radius={[4, 4, 0, 0]} maxBarSize={50} />
           </BarChart>
         </ResponsiveContainer>
       </div>

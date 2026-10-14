@@ -21,10 +21,10 @@ export function Titlebar() {
   return (
     <div className="flex items-center justify-between h-9 bg-surface-900 select-none flex-shrink-0" data-tauri-drag-region>
       <div className="flex items-center gap-2 px-3" data-tauri-drag-region>
-        <div className="w-5 h-5 rounded-md bg-gradient-to-br from-accent to-cyan-600 flex items-center justify-center flex-shrink-0">
+        <div className="w-5 h-5 rounded-md bg-gradient-to-br from-accent to-accent-dim flex items-center justify-center flex-shrink-0">
           <Monitor className="w-3 h-3 text-white" />
         </div>
-        <span className="text-xs font-semibold text-gray-300" data-tauri-drag-region>OpenCode Monitor</span>
+        <span className="text-xs font-semibold text-gray-300" data-tauri-drag-region><span className="text-accent">❯</span> OpenCode Monitor</span>
       </div>
       <div className="flex">
         <button

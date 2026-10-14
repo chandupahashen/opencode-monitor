@@ -103,7 +103,7 @@ function getModelColor(model: string): string {
   if (m.includes("gpt")) return "text-green-accent";
   if (m.includes("claude")) return "text-orange-accent";
   if (m.includes("deepseek")) return "text-accent";
-  if (m.includes("gemini")) return "text-blue-400";
+  if (m.includes("gemini")) return "text-blue-accent";
   if (m.includes("llama")) return "text-purple-accent";
   if (m.includes("o1") || m.includes("o3")) return "text-yellow-accent";
   return "text-gray-300";

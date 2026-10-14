@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Tests** — `models.rs` unit tests for JSON vs `provider/model#variant` extraction, variant parsing, worktree basename
 
 ### Changed
+- **opencode TUI-inspired theme** — palette now follows the default TUI theme (peach `#fab283` primary, purple `#9d7cd8`, blue `#5c9cf5`, icy `#d8f3ff` text); flat opaque panels replace glassmorphism, full monospace type, `❯` prompt accents, TUI-style bottom status bar (sessions/active/tokens/cost/db state); charts and token heatmap (orange ramp) recolored to match
 - **Model refs** — `extract_model_id`/`decodeModel` strip `#variant` (`opencode/foo#xhigh` → `foo`, variant kept for display) and handle `modelID`/`modelId` keys; `get_model_usage` collapses string-ref variants in Rust post-aggregation
 - **Project stats** — date filter qualified as `s.time_created` (v2 `project` also has `time_created`), `project.name`/`worktree` column-existence guards
 - **Migrations** — `SCHEMA_VERSION=3` with best-effort `session_v2`/`session_message` indexes; `user_version` bump preserves opencode's own higher value via `max()`

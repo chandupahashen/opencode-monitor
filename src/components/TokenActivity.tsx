@@ -22,7 +22,7 @@ const MODES: { id: Mode; label: string }[] = [
 ];
 
 const EMPTY_COLOR = "#26262f";
-const SCALE = ["#173a6b", "#1c5da8", "#2f8fdd", "#63b6f1", "#cbe6fc"];
+const SCALE = ["#4a2c17", "#8a4d1c", "#c97a2e", "#f0a35e", "#fab283"];
 
 function colorFor(tokens: number, max: number): string {
   const lvl = levelFor(tokens, max, SCALE.length);
