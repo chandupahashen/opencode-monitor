@@ -116,22 +116,22 @@ opencode-monitor/
 
 ```bash
 # install JS deps
-npm install
+pnpm install
 
 # dev with hot-reload (Vite + Tauri)
-npm run tauri dev
+pnpm tauri dev
 # or frontend only
-npm run dev        # → http://localhost:1420
+pnpm dev            # → http://localhost:1420
 ```
 
 Useful scripts:
 
 ```bash
-npm run lint        # ESLint + type-check
-npx tsc -b --noEmit # TypeScript only
+pnpm lint           # ESLint + type-check
+pnpm exec tsc -b --noEmit # TypeScript only
 cargo test --manifest-path src-tauri/Cargo.toml
 cargo check --manifest-path src-tauri/Cargo.toml
-npm run build       # tsc + vite → dist/
+pnpm build          # tsc + vite → dist/
 ```
 
 ### Tauri dev notes
@@ -147,7 +147,7 @@ npm run build       # tsc + vite → dist/
 
 ## Code Style & Quality
 
-- **Frontend:** ESLint (`npm run lint`), TypeScript strict, Tailwind v4, functional components, `zustand` for state.
+- **Frontend:** ESLint (`pnpm lint`), TypeScript strict, Tailwind v4, functional components, `zustand` for state.
 - **Backend:** `cargo fmt` / `cargo clippy` (if installed), `tracing` for logs, never `unwrap()` on user input — return `Result<_, String>`.
 - **Commits:** keep diffs focused; one logical change per commit. See [Commit Convention](#commit-convention).
 - **No placeholder files** — prefer editing existing files.
@@ -155,8 +155,8 @@ npm run build       # tsc + vite → dist/
 Before pushing:
 
 ```bash
-npm run lint
-npx tsc -b --noEmit
+pnpm lint
+pnpm exec tsc -b --noEmit
 cargo check --manifest-path src-tauri/Cargo.toml
 ```
 
@@ -195,7 +195,7 @@ The updater uses `tauri-plugin-updater` + `tauri-plugin-process`.
   $env:TAURI_SIGNING_PRIVATE_KEY = Get-Content src-tauri/tauri-key.pem -Raw
   $env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD = "your-password"
   # or TAURI_PRIVATE_KEY / TAURI_KEY_PASSWORD
-  npm run build
+  pnpm build
   cargo tauri build --bundles msi  # uses src-tauri/tauri.conf.json:bundle.createUpdaterArtifacts
   ```
   If no env var, the MSI will be unsigned and `update.json` will contain an empty signature (updater disabled).
@@ -233,7 +233,7 @@ Keep subjects ≤72 chars, imperative mood, no trailing period.
 4. Ensure CI passes: `lint`, `tsc`, `cargo test`
 5. Fill the PR template:
    - **What / Why**
-   - **How tested** (e.g., `cargo check`, `npm run build`, manual DB at `~/.local/share/opencode/opencode.db`)
+   - **How tested** (e.g., `cargo check`, `pnpm build`, manual DB at `~/.local/share/opencode/opencode.db`)
    - **Screenshots** for UI changes
 6. One approval required; maintainers may squash on merge
 

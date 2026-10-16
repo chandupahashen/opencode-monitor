@@ -3,6 +3,7 @@
   "private": true,
   "version": "1.6.0",
   "type": "module",
+  "packageManager": "pnpm@12.3.4",
   "license": "MIT",
   "author": "chandupahashen <https://github.com/chandupahashen>",
   "repository": {

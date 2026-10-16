@@ -44,10 +44,10 @@ cargo install tauri-cli --version "^2.0"
 
 ```bash
 # Install dependencies
-npm install
+pnpm install
 
 # Start dev server with hot-reload
-npm run tauri dev
+pnpm tauri dev
 ```
 
 ## Database
@@ -78,8 +78,8 @@ Quick start for contributors:
 ```bash
 git clone https://github.com/chandupahashen/opencode-monitor.git
 cd opencode-monitor
-npm install
-npm run tauri dev
+pnpm install
+pnpm tauri dev
 ```
 
 Please read `CONTRIBUTING.md` for project structure, DB notes, signing/updater details, and our Conventional Commits + PR checklist.
