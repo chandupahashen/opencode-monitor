@@ -48,9 +48,10 @@ No contribution is too small.
 
 | Tool | Version | Install |
 |------|---------|---------|
+| pnpm | `>=10` (`packageManager` pins `12.3.4`) | https://pnpm.io/installation |
 | Node.js | `>=22` | https://nodejs.org |
 | Rust | stable | https://rustup.rs |
-| Tauri CLI | `^2.0` | `cargo install tauri-cli --version "^2.0"` |
+| Tauri CLI | `^2.0` | ships via devDependencies — `pnpm install` is enough |
 | WebView2 | Windows 10+ | pre-installed on Win 10/11 |
 | SQLite | `3.35+` (json1) | bundled via `rusqlite` |
 

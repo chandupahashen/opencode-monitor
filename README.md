@@ -33,12 +33,10 @@ A desktop dashboard for monitoring and analyzing your [opencode](https://opencod
 ### Prerequisites
 
 - [Node.js](https://nodejs.org/) v22+
+- [pnpm](https://pnpm.io/installation/) (version pinned via `packageManager` in `package.json`)
 - [Rust](https://rustup.rs/) with `cargo`
-- [Tauri CLI](https://v2.tauri.app/start/cli/)
 
-```bash
-cargo install tauri-cli --version "^2.0"
-```
+> The Tauri CLI ships as a devDependency (`@tauri-apps/cli`, locked in `pnpm-lock.yaml`) — no `cargo install tauri-cli` needed.
 
 ### Development
 
