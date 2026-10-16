@@ -1,11 +1,11 @@
 {
-  "version": "1.5.2",
-  "notes": "Latest release of OpenCode Monitor",
-  "pub_date": "2026-06-16T00:00:00Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "",
-      "url": "https://github.com/chandupahashen/opencode-monitor/releases/download/v1.5.2/OpenCode-Monitor_1.5.2_x64_en-US.msi"
+      "url": "https://github.com/chandupahashen/opencode-monitor/releases/download/v1.6.0/OpenCode-Monitor_1.6.0_x64_en-US.msi",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTQTZMbTAvTTl0U0dObzZ6NXkvUmtlTDUrYkgwYytPeEZ1ZkhnUzhBejJvYWRLRFVCMDM3OVl0aFlRKzJPTHJSMEpZQU5tWmdHWW13TjZjczJhRFhQNXZzU25UMXFCVVFrPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyMTUwNjc5CWZpbGU6T3BlbkNvZGUtTW9uaXRvcl8xLjYuMF94NjRfZW4tVVMubXNpCXZlcnNpb246MS42LjAKWmdMNmRSNE02UzNreTE3Yzh1emVSV2NpRDM1Zi9wYjVNYys3allJMkNKN29DNTFPaklrbG1jNFJRdzZGSllEekJ5alZHZWpOTHhUb0k3RlBoK1lZQ1E9PQo="
     }
-  }
+  },
+  "version": "1.6.0",
+  "notes": "See v1.6.0 release notes for details.",
+  "pub_date": "2026-10-16T11:38:00Z"
 }
